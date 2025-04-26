@@ -71,20 +71,42 @@ function saveWatchTime() {
 
 function updateCurrentWatching() {
   const name = getChannelName();
-  if (name) {
-    chrome.storage.local.set({ currentChannelWatching: name.toLowerCase() });
+  const video = document.querySelector('video');
+
+  if (name && video) {
+    const isReallyPaused = video.paused && video.readyState <= 2;
+    const isMutedOrVolumeZero = video.muted || video.volume === 0;
+
+    chrome.storage.local.get(["currentWatching"], (result) => {
+      const currentWatching = result.currentWatching || {};
+
+      currentWatching[name.toLowerCase()] = {
+        isPaused: isReallyPaused,
+        isMuted: !isReallyPaused && isMutedOrVolumeZero,
+        lastUpdate: Date.now()
+      };
+      
+
+      chrome.storage.local.set({ currentWatching });
+    });
   }
 }
 
 function startTracking() {
   updateCurrentWatching();
+  const video = document.querySelector('video');
+  if (video) {
+    video.addEventListener('volumechange', updateCurrentWatching);
+  }
   currentChannel = getChannelName();
   startTime = Date.now();
-
+  
   if (watchInterval) clearInterval(watchInterval);
-
   setTimeout(() => {
-    watchInterval = setInterval(saveWatchTime, 30000);
+    watchInterval = setInterval(() => {
+      saveWatchTime();
+      updateCurrentWatching();
+    }, 30000);
   }, 3000);
 }
 

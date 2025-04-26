@@ -84,12 +84,28 @@ function resetData() {
   }
 }
 
-  let currentWatching = null;
+  let currentWatching = {};
 
-  chrome.storage.local.get(["sessions", "favorites", "currentChannelWatching"], (result) => {
+  chrome.storage.local.get(["sessions", "favorites", "currentWatching"], (result) => {
     sessionsData = result.sessions || {};
     favorites = result.favorites || [];
-    currentWatching = result.currentChannelWatching || null;
+    currentWatching = result.currentWatching || {};
+    // Auto-clean des entrées orphelines
+    const activeChannels = Object.keys(getTotalStreamTimes(sessionsData));
+
+    const now = Date.now();
+    const threshold = 5 * 60 * 1000; // 5 minutes (modifiable)
+
+    // Nettoyage automatique des streams inactifs
+    for (const [channel, info] of Object.entries(currentWatching)) {
+      if (!info.lastUpdate || now - info.lastUpdate > threshold) {
+        delete currentWatching[channel];
+      }
+    }
+
+    // Sauvegarde seulement si on a supprimé des entrées
+    chrome.storage.local.set({ currentWatching });
+    
     displayStreamers('total');
   });
 
@@ -158,39 +174,38 @@ function resetData() {
         const hr = document.createElement('hr');
         container.appendChild(hr);
       }
-
+    
       for (const [key, seconds] of list) {
         const card = document.createElement('div');
         card.className = 'channel-card clickable';
-
-        if (mode !== 'category' && key.toLowerCase() === currentWatching) {
+    
+        let overlayHTML = '';
+    
+        const watchingStatus = currentWatching[key.toLowerCase()];
+    
+        if (mode !== 'category' && watchingStatus) {
           card.classList.add('watching-now');
+    
+          if (watchingStatus.isPaused) {
+            overlayHTML = `<div class="status-overlay paused">Pause</div>`;
+          } else if (watchingStatus.isMuted) {
+            overlayHTML = `<div class="status-overlay muted">Muted</div>`;
+          }
         }
-
-        if (mode === 'category') {
-          card.innerHTML = `
-            <div class="top-row">
-              <div class="left">
-                <span class="icon">🎮</span> <strong class="channel-name">${key}</strong>
-              </div>
-              <div class="right">
-                <span class="channel-time">${formatTime(seconds)}</span>
-              </div>
+    
+        card.innerHTML = `
+          ${overlayHTML}
+          <div class="top-row">
+            <div class="left">
+              ${mode === 'category' ? `<span class="icon">🎮</span>` : ''}
+              <strong class="channel-name">${key}</strong>
             </div>
-          `;
-        } else {
-          card.innerHTML = `
-            <div class="top-row">
-              <div class="left">
-                <strong class="channel-name">${key}</strong>
-              </div>
-              <div class="right">
-                <span class="channel-time">${formatTime(seconds)}</span>
-              </div>
+            <div class="right">
+              <span class="channel-time">${formatTime(seconds)}</span>
             </div>
-          `;
-        }
-
+          </div>
+        `;
+    
         if (mode === 'total' || mode === '7days') {
           card.addEventListener('click', () => {
             showChannelDetails(key.toLowerCase(), sessionsData);
@@ -200,10 +215,10 @@ function resetData() {
             showCategoryDetails(key, sessionsData);
           });
         }
-
+    
         container.appendChild(card);
       }
-    }
+    }      
 
     if (!showingAll && nonFavItems.length > 6) {
       const moreBtn = document.createElement('button');
