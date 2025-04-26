@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="icons/icon128.png" alt="Twitch Watch Tracker logo" width="180">
+</p>
+
 # Twitch Watch Tracker 🎮📈
 
 Une extension Chrome pour **suivre votre temps de visionnage sur Twitch**, par chaîne, par jeu et par période (total, semaine, mois, 7 derniers jours).
