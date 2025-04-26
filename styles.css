@@ -99,6 +99,7 @@ body {
     gap: 4px;
     transition: background-color 0.3s, transform 0.2s;
     cursor: pointer;
+    position: relative;
   }
   
   .channel-card:hover {
@@ -264,4 +265,31 @@ body {
     50% { box-shadow: 0 0 16px #9146ffcc; }
     100% { box-shadow: 0 0 8px #9146ff80; }
   }
+
+  .status-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6); /* Noir semi-transparent */
+    color: #ff4c4c; /* Rouge par défaut */
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 0.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px; /* comme la card */
+    text-transform: uppercase;
+    z-index: 10;
+  }
+  
+  .status-overlay.paused {
+    color: rgba(255, 165, 0, 0.6);
+  }
+  .status-overlay.muted {
+    color: rgba(255, 0, 0, 0.6);;
+  }
+  
   

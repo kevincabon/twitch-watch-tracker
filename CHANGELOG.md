@@ -2,6 +2,23 @@
 
 Toutes les modifications importantes de Twitch Watch Tracker seront listées ici.
 
+## [0.4.2-beta] - 2025-04-26
+
+### Ajouts
+- Support complet du **multi-streams** : plusieurs streams ouverts peuvent être suivis en parallèle (Pause, Mute, Playing).
+- Chaque stream sauvegarde désormais son **propre statut** dans `currentWatching`.
+- Affichage d'un **overlay** stylisé (semi-transparent, centré) en cas de Pause ou Mute sur un stream actif.
+- Ajout d'un **nettoyage automatique** des streams inactifs (plus de 5 minutes sans mise à jour).
+
+### Corrections
+- Correction du bug où les bordures violettes restaient affichées sur des streams fermés.
+- Correction de l'affichage erroné de l'overlay lorsque plusieurs streams sont ouverts.
+- Suppression des entrées "fantômes" dans les statuts actifs.
+
+### Qualité de vie
+- Nettoyage automatique des données inutiles à chaque ouverture du popup.
+- Code rendu plus scalable pour de futurs ajouts d'options de suivi avancé.
+
 ---
 
 ## [0.4.1-beta] - 2025-04-26
