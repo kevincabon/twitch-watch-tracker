@@ -253,3 +253,15 @@ body {
     transform: translateY(0);
   }
   
+  .watching-now {
+    border: 2px solid #9146ff;
+    box-shadow: 0 0 10px #9146ff80;
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0% { box-shadow: 0 0 8px #9146ff80; }
+    50% { box-shadow: 0 0 16px #9146ffcc; }
+    100% { box-shadow: 0 0 8px #9146ff80; }
+  }
+  
