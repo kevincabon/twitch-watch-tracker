@@ -2,6 +2,17 @@
 
 Toutes les modifications importantes de Twitch Watch Tracker seront listées ici.
 
+## [0.4.3-beta] - 2025-04-26
+
+### Fixed
+- Résolution d'un bug où la catégorie du jeu n'était pas correctement détectée lorsqu'un streamer utilisait la fonctionnalité "Streamer ensemble" ou "Stream Together" de Twitch.
+- La catégorie réelle du jeu est maintenant correctement récupérée pour le tracking.
+
+### Misc
+- Légères optimisations de la fonction `getCurrentCategory()` pour une meilleure robustesse.
+
+---
+
 ## [0.4.2-beta] - 2025-04-26
 
 ### Ajouts

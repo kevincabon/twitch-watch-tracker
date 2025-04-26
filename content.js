@@ -16,8 +16,14 @@ function getChannelName() {
 }
 
 function getCurrentCategory() {
-  const el = document.querySelector('a[data-a-target="stream-game-link"]');
-  return el ? el.innerText.trim() : "Autre";
+  const links = document.querySelectorAll('a[data-a-target="stream-game-link"]');
+  for (const link of links) {
+      const text = link.innerText.trim().toLowerCase();
+      if (!text.includes("streamer ensemble") && !text.includes("stream together")) {
+          return link.innerText.trim();
+      }
+  }
+  return "Autre";
 }
 
 function isVideoPlayingAndNotMuted() {
