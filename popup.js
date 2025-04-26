@@ -76,6 +76,164 @@ function importData() {
   reader.readAsText(file);
 }
 
+function showWeekDetails(weekKey) {
+  const detailsContainer = document.getElementById('channelDetails');
+  detailsContainer.innerHTML = '';
+
+  const title = document.createElement('h2');
+  title.textContent = `Détails semaine : ${weekKey}`;
+  detailsContainer.appendChild(title);
+
+  const daysData = {}; 
+
+  for (const [dateStr, channels] of Object.entries(sessionsData)) {
+    const date = new Date(dateStr);
+    const year = date.getFullYear();
+    const week = getISOWeek(date);
+    const formattedWeek = `${year}-W${week}`;
+
+    if (formattedWeek === weekKey) {
+      let totalSeconds = 0;
+      for (const data of Object.values(channels)) {
+        totalSeconds += data.total || 0;
+      }
+      daysData[dateStr] = totalSeconds;
+    }
+  }
+
+  // Liste texte
+  const dayList = document.createElement('div');
+  dayList.className = 'detail-block';
+  for (const [day, seconds] of Object.entries(daysData)) {
+    const p = document.createElement('p');
+    p.textContent = `${formatDayDate(day)} - ${formatTime(seconds)}`;
+    dayList.appendChild(p);
+  }
+  detailsContainer.appendChild(dayList);
+
+  // Canvas
+  const canvas = document.createElement('canvas');
+  canvas.id = 'weekChart';
+  canvas.style.marginTop = '20px';
+  detailsContainer.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(daysData).map(date => getShortDayName(date)),
+      datasets: [{
+        label: 'Temps par jour (minutes)',
+        data: Object.values(daysData).map(sec => Math.round(sec / 60)),
+        backgroundColor: '#9146ff'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+
+  document.getElementById('mainView').classList.add('hidden');
+  document.getElementById('detailsView').classList.remove('hidden');
+  document.getElementById('backButton').style.display = 'block';
+}
+
+function showMonthDetails(monthKey) {
+  const detailsContainer = document.getElementById('channelDetails');
+  detailsContainer.innerHTML = '';
+
+  const title = document.createElement('h2');
+  title.textContent = `Détails mois : ${monthKey}`;
+  detailsContainer.appendChild(title);
+
+  const weeksData = {};
+
+  for (const [dateStr, channels] of Object.entries(sessionsData)) {
+    if (dateStr.startsWith(monthKey)) {
+      const date = new Date(dateStr);
+      const week = getISOWeek(date);
+      const weekKey = `${date.getFullYear()}-W${week}`;
+
+      let totalSeconds = 0;
+      for (const data of Object.values(channels)) {
+        totalSeconds += data.total || 0;
+      }
+
+      weeksData[weekKey] = (weeksData[weekKey] || 0) + totalSeconds;
+    }
+  }
+
+  // Affichage texte
+  const weekList = document.createElement('div');
+  weekList.className = 'detail-block';
+  for (const [week, seconds] of Object.entries(weeksData)) {
+    const p = document.createElement('p');
+    p.textContent = `${week} - ${formatTime(seconds)}`;
+    weekList.appendChild(p);
+  }
+  detailsContainer.appendChild(weekList);
+
+  // Création du canvas Chart.js
+  const canvas = document.createElement('canvas');
+  canvas.id = 'monthChart';
+  canvas.style.marginTop = '20px';
+  detailsContainer.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(weeksData),
+      datasets: [{
+        label: 'Temps par semaine (minutes)',
+        data: Object.values(weeksData).map(sec => Math.round(sec / 60)),
+        backgroundColor: '#9146ff'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: (val) => Math.floor(val / 60) + ' min'
+          }
+        }
+      }
+    }
+  });
+
+  document.getElementById('mainView').classList.add('hidden');
+  document.getElementById('detailsView').classList.remove('hidden');
+  document.getElementById('backButton').style.display = 'block';
+}
+
+function formatDayDate(dateStr) {
+  const date = new Date(dateStr);
+  const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+  return date.toLocaleDateString('fr-FR', options);
+}
+
+function getShortDayName(dateStr) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('fr-FR', { weekday: 'short' });
+}
+
+function formatShortDay(dateStr) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('fr-FR', { weekday: 'short' });
+}
+
 function resetData() {
   if (confirm('⚠️ Êtes-vous sûr de vouloir tout réinitialiser ?')) {
     chrome.storage.local.clear(() => {
@@ -211,11 +369,19 @@ function resetData() {
           card.addEventListener('click', () => {
             showChannelDetails(key.toLowerCase(), sessionsData);
           });
+        } else if (mode === 'week') {
+          card.addEventListener('click', () => {
+            showWeekDetails(key, sessionsData);
+          });
+        } else if (mode === 'month') {
+          card.addEventListener('click', () => {
+            showMonthDetails(key, sessionsData); // ➔ la nouvelle fonction !
+          });
         } else if (mode === 'category') {
           card.addEventListener('click', () => {
             showCategoryDetails(key, sessionsData);
           });
-        }
+        }     
     
         container.appendChild(card);
       }

@@ -2,6 +2,20 @@
 
 Toutes les modifications importantes de Twitch Watch Tracker seront listées ici.
 
+## [0.4.4-beta] - 2025-04-27
+
+## Nouveautés
+- 🚀 Ajout d'une vue détaillée lorsqu'on clique sur un mois dans la section "Par mois".
+- 📈 Affichage des semaines du mois sélectionné avec leur durée de visionnage.
+- 🖼️ Ajout d'un graphique dynamique via Chart.js pour voir la répartition du temps de visionnage par semaine.
+- 🎨 Amélioration visuelle pour garder une cohérence entre l'affichage des jours, des semaines, et des mois.
+
+## Corrections mineures
+- Optimisation du code pour une meilleure maintenabilité.
+- Uniformisation des noms de semaines et de mois.
+
+---
+
 ## [0.4.3-beta] - 2025-04-26
 
 ### Fixed
