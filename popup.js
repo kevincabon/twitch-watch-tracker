@@ -84,15 +84,11 @@ function resetData() {
   }
 }
 
-  let currentWatching = null;
-
-  chrome.storage.local.get(["sessions", "favorites", "currentChannelWatching"], (result) => {
+  chrome.storage.local.get(["sessions", "favorites"], (result) => {
     sessionsData = result.sessions || {};
     favorites = result.favorites || [];
-    currentWatching = result.currentChannelWatching || null;
     displayStreamers('total');
   });
-
 
   filterSelect.addEventListener('change', () => {
     displayStreamers(filterSelect.value);
@@ -162,10 +158,6 @@ function resetData() {
       for (const [key, seconds] of list) {
         const card = document.createElement('div');
         card.className = 'channel-card clickable';
-
-        if (mode !== 'category' && key.toLowerCase() === currentWatching) {
-          card.classList.add('watching-now');
-        }
 
         if (mode === 'category') {
           card.innerHTML = `

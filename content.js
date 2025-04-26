@@ -69,15 +69,7 @@ function saveWatchTime() {
   }
 }
 
-function updateCurrentWatching() {
-  const name = getChannelName();
-  if (name) {
-    chrome.storage.local.set({ currentChannelWatching: name.toLowerCase() });
-  }
-}
-
 function startTracking() {
-  updateCurrentWatching();
   currentChannel = getChannelName();
   startTime = Date.now();
 
