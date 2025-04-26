@@ -1,0 +1,255 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #18181b;
+    color: #f4f4f5;
+    margin: 0;
+    padding: 15px;
+    width: 360px;
+  }
+  
+  .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .title {
+    font-size: 22px;
+    font-weight: bold;
+    color: #9146ff;
+    display: flex;
+    align-items: center;
+  }
+  
+  .stats-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .channel-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #e5e5ff;
+  }
+
+  .channel-time {
+    font-size: 14px;
+    color: #c4c4cc;
+  }
+  
+  .reset-button {
+    margin-top: 20px;
+    padding: 8px 16px;
+    background-color: #9146ff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .reset-button:hover {
+    background-color: #7c3aed;
+  }
+  .channel-card.clickable {
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  .channel-card.clickable:hover {
+    background-color: #383838;
+  }
+  .filters {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #fff;
+  }
+  
+  #timeFilter {
+    margin-top: 4px;
+    padding: 8px;
+    border-radius: 8px;
+    background-color: #27272a;
+    color: #fff;
+    border: 1px solid #444;
+    font-size: 14px;
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+    width: 100%;
+  }
+  
+  #timeFilter:hover {
+    border-color: #9146ff;
+  }
+
+  .channel-card {
+    background-color: #1f1f23;
+    border: 1px solid #3a3a40;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin: 2px 0;
+    font-size: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: background-color 0.3s, transform 0.2s;
+    cursor: pointer;
+  }
+  
+  .channel-card:hover {
+    background-color: #2b2b31;
+    transform: scale(1.01);
+  }
+
+  .channel-card .top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .channel-card span.icon {
+    font-size: 18px;
+    margin-right: 8px;
+  }
+
+  .section-title {
+    margin-top: 16px;
+    font-size: 15px;
+    font-weight: bold;
+    color: #e0e0e6;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .section-title::before {
+    content: '•';
+    color: #9146ff;
+    font-weight: bold;
+  }
+
+  .detail-block p {
+    margin: 4px 0;
+    padding-left: 8px;
+    color: #d6d6e1;
+    font-size: 14px;
+  }
+
+  #channelDetails h2 {
+    margin-bottom: 10px;
+    color: #ffffff;
+  }
+  
+  .detail-block {
+    margin-top: 10px;
+  }
+  
+  button.reset-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .reset-button svg {
+    width: 16px;
+    height: 16px;
+    fill: white;
+  }
+
+  .top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .right {
+    font-size: 14px;
+    color: #bdbdff;
+    white-space: nowrap;
+  }
+  
+  hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, #9146ff, transparent);
+    margin: 10px 0;
+    width: 100%;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 8px; /* Optionnel pour un petit espace entre texte et icône */
+  }
+  
+  #optionsButton {
+    font-size: 20px;
+    cursor: pointer;
+  }
+  
+  #optionsMenu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background-color: #1f1f23;
+    padding: 10px;
+    border: 1px solid #3b3b4c;
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  
+  .hidden {
+    opacity: 0;
+    visibility: hidden;
+    max-height: 0;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .menu-button {
+    background-color: #9146ff;
+    border: none;
+    padding: 8px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+  }
+  
+  .menu-button:hover {
+    background-color: #a962ff;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: #d4d4d8;
+    margin-bottom: 10px;
+    text-align: center;
+  }  
+  .expandable-item {
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  
+  .expandable-item.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Twitch Watch Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+      <div class="header">
+        <div class="title">Twitch Watch Stats</div>
+        <div id="optionsButton">⚙️</div>
+      </div>
+
+      <div id="totalWatchTime" class="subtitle"></div>
+      
+      <div id="optionsMenu" class="hidden">
+        <button id="exportButton" class="menu-button">📥 Exporter JSON</button>
+        <button id="importButton" class="menu-button">📤 Importer JSON</button>
+        <button id="resetButton" class="menu-button">🗑️ Reset Data</button>
+        <input type="file" id="fileInput" accept=".json" style="display: none;" />
+      </div>      
+  
+      <div id="mainView">
+        <div class="filters">
+            <label for="timeFilter">Voir par :</label>
+            <select id="timeFilter">
+              <option value="total">Total</option>
+              <option value="7days">7 derniers jours</option>
+              <option value="week">Par semaine</option>
+              <option value="month">Par mois</option>
+              <option value="category">Par catégorie</option>
+            </select>
+        </div>                 
+        <div id="weeklyStats" class="stats-container"></div>
+      </div>
+  
+      <div id="detailsView" class="hidden">
+        <button id="backButton" class="reset-button">← Retour</button>
+        <div id="channelDetails" class="stats-container"></div>
+      </div>
+    </div>
+  
+    <script src="stats.js"></script>
+    <script src="popup.js"></script>
+  </body>
+  
+</html>
