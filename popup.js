@@ -48,8 +48,9 @@ function exportData() {
     const blob = new Blob([JSON.stringify(items)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
+    const now = new Date().toISOString().replace('T', '__').replace(/\..+/, '');
     a.href = url;
-    a.download = 'twitch_watch_data.json';
+    a.download = `twitch_watch_data_${now}.json`;    
     a.click();
     URL.revokeObjectURL(url);
   });
