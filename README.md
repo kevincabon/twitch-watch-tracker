@@ -40,9 +40,9 @@ Une extension Chrome pour **suivre votre temps de visionnage sur Twitch**, par c
 | `manifest.json` | Déclaration de l'extension Chrome |
 | `content.js` | Tracking du visionnage directement sur Twitch |
 | `popup.html` | Interface principale du popup |
-| `popup.js` | Logique d'affichage des statistiques |
+| `popup.js` | Logique d'affichage des statistiques et des filtres |
+| `stats.js` | Fonctions utilitaires pour calculer Total, 7 jours, par semaine, par mois |
 | `styles.css` | Style du popup |
-| `channelCategories.js` | Mapping simple des catégories (ex: Just Chatting, GTA RP) |
 
 ---
 
