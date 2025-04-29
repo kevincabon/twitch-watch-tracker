@@ -169,6 +169,21 @@ body {
     align-items: center;
     width: 100%;
   }
+
+  .top-row .left {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* augmente l'espacement interne */
+  }
+  
+  .top-row .right {
+    margin-left: auto; /* pousse la durée complètement à droite */
+    padding-left: 12px; /* optionnel pour l'espace entre les deux */
+    font-size: 14px;
+    color: #bdbdff;
+    white-space: nowrap;
+  }
+  
   
   .left {
     display: flex;
