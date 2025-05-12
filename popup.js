@@ -534,8 +534,12 @@ function resetData() {
     const average = total / Object.keys(byDay).length || 0;
   
     const title = document.createElement('h2');
-    title.textContent = `Détails : ${channel}`;
+    title.innerHTML = `Détails : <a href="https://twitch.tv/${channel}" target="_blank" class="channel-link">${channel}</a>`;
     detailsContainer.appendChild(title);
+
+    const externalLink = document.createElement('p');
+    externalLink.innerHTML = `🔗 <a href="https://twitchtracker.com/${channel}" target="_blank" class="external-link">Voir sur TwitchTracker</a>`;
+    detailsContainer.appendChild(externalLink);
   
     const totalText = document.createElement('p');
     totalText.innerHTML = `⏱ <strong>Temps total</strong> : ${formatTime(total)}`;
@@ -608,7 +612,7 @@ function resetData() {
     const sorted = Object.entries(byStreamer).sort((a, b) => b[1] - a[1]);
     for (const [name, seconds] of sorted) {
       const p = document.createElement('p');
-      p.textContent = `${name} : ${formatTime(seconds)}`;
+      p.innerHTML = `<a href="https://twitch.tv/${name}" target="_blank" class="channel-link">${name}</a> : ${formatTime(seconds)}`;
       list.appendChild(p);
     }
     detailsContainer.appendChild(list);
