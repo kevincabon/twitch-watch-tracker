@@ -2,6 +2,17 @@
 
 Toutes les modifications importantes de Twitch Watch Tracker seront listées ici.
 
+## [0.4.5-beta] - 2025-05-12
+
+### Ajouté
+- Affichage dans les graphiques des jours sans activité (0 minute ou équivalent).
+- Indicateurs visuels clairs pour les jours non visionnés dans les vues par semaine.
+
+### Modifié
+- Classement des semaines et des mois passé en ordre chronologique (au lieu du temps de visionnage).
+
+---
+
 ## [0.4.4-beta] - 2025-04-27
 
 ## Nouveautés
