@@ -84,34 +84,36 @@ function showWeekDetails(weekKey) {
   title.textContent = `Détails semaine : ${weekKey}`;
   detailsContainer.appendChild(title);
 
-  const daysData = {}; 
+  // ← Obtenir les vraies dates ISO du lundi au dimanche
+  const weekDates = getDatesOfWeek(weekKey); // tableau de 7 dates (lundi à dimanche)
 
-  for (const [dateStr, channels] of Object.entries(sessionsData)) {
-    const date = new Date(dateStr);
-    const year = date.getFullYear();
-    const week = getISOWeek(date);
-    const formattedWeek = `${year}-W${week}`;
+  // Associer les secondes pour chaque jour
+  const daysData = {};
+  for (const dateStr of weekDates) {
+    daysData[dateStr] = 0;
+  }
 
-    if (formattedWeek === weekKey) {
+  for (const dateStr of Object.keys(sessionsData)) {
+    if (daysData.hasOwnProperty(dateStr)) {
       let totalSeconds = 0;
-      for (const data of Object.values(channels)) {
+      for (const data of Object.values(sessionsData[dateStr])) {
         totalSeconds += data.total || 0;
       }
       daysData[dateStr] = totalSeconds;
     }
   }
 
-  // Liste texte
+  // Affichage texte
   const dayList = document.createElement('div');
   dayList.className = 'detail-block';
-  for (const [day, seconds] of Object.entries(daysData)) {
+  for (const date of weekDates) {
     const p = document.createElement('p');
-    p.textContent = `${formatDayDate(day)} - ${formatTime(seconds)}`;
+    p.textContent = `${formatDayDate(date)} - ${formatTime(daysData[date])}`;
     dayList.appendChild(p);
   }
   detailsContainer.appendChild(dayList);
 
-  // Canvas
+  // Graphique Chart.js
   const canvas = document.createElement('canvas');
   canvas.id = 'weekChart';
   canvas.style.marginTop = '20px';
@@ -121,10 +123,10 @@ function showWeekDetails(weekKey) {
   new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: Object.keys(daysData).map(date => getShortDayName(date)),
+      labels: weekDates.map(getShortDayName), // ["lun.", "mar.", ...]
       datasets: [{
         label: 'Temps par jour (minutes)',
-        data: Object.values(daysData).map(sec => Math.round(sec / 60)),
+        data: weekDates.map(d => Math.round(daysData[d] / 60)),
         backgroundColor: '#9146ff'
       }]
     },
@@ -134,7 +136,12 @@ function showWeekDetails(weekKey) {
         legend: { display: false }
       },
       scales: {
-        y: { beginAtZero: true }
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: (val) => `${val} min`
+          }
+        }
       }
     }
   });
@@ -226,12 +233,29 @@ function formatDayDate(dateStr) {
 
 function getShortDayName(dateStr) {
   const date = new Date(dateStr);
-  return date.toLocaleDateString('fr-FR', { weekday: 'short' });
+  return new Intl.DateTimeFormat('fr-FR', { weekday: 'short' }).format(date);
 }
 
 function formatShortDay(dateStr) {
   const date = new Date(dateStr);
   return date.toLocaleDateString('fr-FR', { weekday: 'short' });
+}
+
+function getDatesOfWeek(weekKey) {
+  const [year, week] = weekKey.split('-W').map(Number);
+  const targetThursday = new Date(Date.UTC(year, 0, 1 + (week - 1) * 7 + 1));
+  
+  const targetMonday = new Date(targetThursday);
+  targetMonday.setDate(targetThursday.getDate() - 3);
+  
+  const dates = [];
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(targetMonday);
+    date.setDate(targetMonday.getDate() + i);
+    dates.push(date.toISOString().split('T')[0]);
+  }
+  
+  return dates;
 }
 
 function resetData() {
@@ -319,7 +343,13 @@ function resetData() {
     }
 
     let items = Object.entries(streamTimes);
-    items.sort((a, b) => b[1] - a[1]);
+    if (mode === 'week') {
+      items.sort((a, b) => b[0].localeCompare(a[0]));
+    } else if (mode === 'month') {
+      items.sort((a, b) => b[0].localeCompare(a[0]));
+    } else {
+      items.sort((a, b) => b[1] - a[1]);
+    }    
 
     updateTotalWatchTime(streamTimes, mode);
 
