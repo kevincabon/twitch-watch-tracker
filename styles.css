@@ -34,6 +34,29 @@ body {
     color: #e5e5ff;
   }
 
+  .channel-link {
+    color: #9146ff;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  
+  .channel-link:hover {
+    text-decoration: underline;
+  }  
+
+  .external-link {
+    color: #38bdf8;
+    text-decoration: none;
+    font-weight: 500;
+    margin-top: 0;
+    margin-bottom: 10px;
+    display: inline-block; 
+  }
+  
+  .external-link:hover {
+    text-decoration: underline;
+  }  
+
   .channel-time {
     font-size: 14px;
     color: #c4c4cc;
@@ -142,7 +165,7 @@ body {
   }
 
   #channelDetails h2 {
-    margin-bottom: 10px;
+    margin-bottom: 4px;
     color: #ffffff;
   }
   
