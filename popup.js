@@ -320,224 +320,254 @@ function getDatesOfWeek(weekKey) {
   document.getElementById('backButton').style.display = 'none';
 
   function displayStreamers(mode) {
-    const totalWatchTimeElement = document.getElementById('totalWatchTime');
-
-    function formatTotalTime(seconds) {
-      if (seconds <= 0) return "0s";
-      const h = Math.floor(seconds / 3600);
-      const m = Math.floor((seconds % 3600) / 60);
-      const s = seconds % 60;
-      return `${h}h ${m}m ${s}s`;
-    }
-    
-    function updateTotalWatchTime(streamTimes, mode) {
-      const totalSeconds = Object.values(streamTimes).reduce((sum, seconds) => sum + seconds, 0);
-      let label = "Temps total";
-      if (mode === '7days') label = "Temps sur 7 derniers jours";
-      if (mode === 'week') label = "Temps cumulé par semaine";
-      if (mode === 'month') label = "Temps cumulé par mois";
-      if (mode === 'category') label = "Temps cumulé par catégorie";
-      totalWatchTimeElement.textContent = `${label} : ${formatTotalTime(totalSeconds)}`;
-    }
-
     container.innerHTML = '';
-    let streamTimes = {};
-
-    if (mode === 'total') {
-      streamTimes = getTotalStreamTimes(sessionsData);
-    } else if (mode === '7days') {
-      streamTimes = getLast7DaysStats(sessionsData);
-    } else if (mode === 'week') {
-      streamTimes = getStatsGroupedByWeek(sessionsData);
-    } else if (mode === 'month') {
-      streamTimes = getStatsGroupedByMonth(sessionsData);
-    } else if (mode === 'category') {
-      streamTimes = getTotalByCategory(sessionsData);
+  
+    const streamTimes = getStreamTimesByMode(mode);
+    const sortedItems = sortStreamItems(streamTimes, mode);
+    const [favItems, nonFavItems] = splitByFavorites(sortedItems);
+  
+    updateTotalWatchTimeDisplay(streamTimes, mode);
+    renderFavorites(favItems, mode);
+    renderOthers(nonFavItems, mode, favItems.length > 0);
+  
+    setupShowMoreButton(nonFavItems);
+    setupSearchInput(mode);
+  }
+  
+  function getStreamTimesByMode(mode) {
+    switch (mode) {
+      case '7days': return getLast7DaysStats(sessionsData);
+      case 'week': return getStatsGroupedByWeek(sessionsData);
+      case 'month': return getStatsGroupedByMonth(sessionsData);
+      case 'category': return getTotalByCategory(sessionsData);
+      default: return getTotalStreamTimes(sessionsData);
     }
-
-    let items = Object.entries(streamTimes);
-    if (mode === 'week') {
-      items.sort((a, b) => b[0].localeCompare(a[0]));
-    } else if (mode === 'month') {
-      items.sort((a, b) => b[0].localeCompare(a[0]));
+  }
+  
+  function sortStreamItems(items, mode) {
+    let entries = Object.entries(items);
+    if (mode === 'week' || mode === 'month') {
+      entries.sort((a, b) => b[0].localeCompare(a[0]));
     } else {
-      items.sort((a, b) => b[1] - a[1]);
-    }    
+      entries.sort((a, b) => b[1] - a[1]);
+    }
+    return entries;
+  }
+  
+  function splitByFavorites(items) {
+    const fav = items.filter(([name]) => favorites.includes(name.toLowerCase()));
+    const nonFav = items.filter(([name]) => !favorites.includes(name.toLowerCase()));
+    return [fav, nonFav];
+  }
+  
+  function updateTotalWatchTimeDisplay(times, mode) {
+    const totalWatchTimeElement = document.getElementById('totalWatchTime');
+    const totalSeconds = Object.values(times).reduce((sum, sec) => sum + sec, 0);
+    const labels = {
+      total: "Temps total",
+      '7days': "Temps sur 7 derniers jours",
+      week: "Temps cumulé par semaine",
+      month: "Temps cumulé par mois",
+      category: "Temps cumulé par catégorie"
+    };
+    totalWatchTimeElement.textContent = `${labels[mode]} : ${formatTime(totalSeconds)}`;
+  }
+  
+  function renderFavorites(items, mode) {
+    if (!items.length) return;
+    const favTitle = document.createElement('div');
+    favTitle.className = 'fav-section-title';
+    favTitle.innerHTML = '⭐ Favoris';
+    container.appendChild(favTitle);
+  
+    const favBg = document.createElement('div');
+    favBg.className = 'fav-section-bg';
+    favBg.id = 'favSectionBg';
+    container.appendChild(favBg);
+  
+    for (const [key, seconds] of items) {
+      const card = createChannelCard(key, seconds, mode, true);
+      renderAvatarWithLiveStatus(card, key);
+      favBg.appendChild(card);
+    }
+  }
+  
+  function renderOthers(items, mode, insertHr) {
+    const shownItems = showingAll ? items : items.slice(0, 6);
+    if (insertHr && shownItems.length > 0) {
+      const hr = document.createElement('hr');
+      container.appendChild(hr);
+    }
+  
+    for (const [key, seconds] of shownItems) {
+      const card = createChannelCard(key, seconds, mode, false);
+      renderAvatarWithLiveStatus(card, key);
+      container.appendChild(card);
+    }
+  }
 
-    updateTotalWatchTime(streamTimes, mode);
-
-    const favItems = items.filter(([name]) => favorites.includes(name.toLowerCase()));
-    const nonFavItems = items.filter(([name]) => !favorites.includes(name.toLowerCase()));
-
-    const limitedNonFav = showingAll ? nonFavItems : nonFavItems.slice(0, 6);
-
-    for (const [listName, list] of [["Favoris", favItems], ["Autres", limitedNonFav]]) {
-      if (listName === "Favoris" && list.length > 0) {
-        const favTitle = document.createElement('div');
-        favTitle.className = 'fav-section-title';
-        favTitle.innerHTML = '⭐ Favoris';
-        container.appendChild(favTitle);
-        const favBg = document.createElement('div');
-        favBg.className = 'fav-section-bg';
-        favBg.id = 'favSectionBg';
-        container.appendChild(favBg);
-        for (const [key, seconds] of list) {
-          const card = document.createElement('div');
-          card.className = 'channel-card clickable fav-card';
-          card.dataset.channel = key.toLowerCase();
-          let overlayHTML = '';
-          const watchingStatus = currentWatching[key.toLowerCase()];
-          if (mode !== 'category' && watchingStatus) {
-            card.classList.add('watching-now');
-            if (watchingStatus.isPaused) {
-              overlayHTML = `<div class="status-overlay paused">Pause</div>`;
-            } else if (watchingStatus.isMuted) {
-              overlayHTML = `<div class="status-overlay muted">Muted</div>`;
-            }
-          }
-          const avatar = `<div class="avatar" data-channel="${key}"><span>${key[0].toUpperCase()}</span></div>`;
-          card.innerHTML = `
-            ${overlayHTML}
-            <div class="top-row">
-              <div class="left">
-                ${avatar}
-                <strong class="channel-name">${key}</strong>
-              </div>
-              <div class="right">
-                <span class="channel-time">${formatTime(seconds)}</span>
-              </div>
-            </div>
-          `;
-          if (mode === 'total' || mode === '7days') {
-            card.addEventListener('click', () => {
-              showChannelDetails(key.toLowerCase(), sessionsData);
-            });
-          } else if (mode === 'week') {
-            card.addEventListener('click', () => {
-              showWeekDetails(key, sessionsData);
-            });
-          } else if (mode === 'month') {
-            card.addEventListener('click', () => {
-              showMonthDetails(key, sessionsData);
-            });
-          } else if (mode === 'category') {
-            card.addEventListener('click', () => {
-              showCategoryDetails(key, sessionsData);
-            });
-          }
-          favBg.appendChild(card);
-          setTimeout(() => {
-            const avatarDiv = card.querySelector('.avatar');
-            if (avatarDiv) {
-              setAvatar(avatarDiv, key.toLowerCase(), sessionsData);
-            }
-          }, 0);
-        }
-        continue;
-      }
-    
-      if (list.length > 0 && listName === "Autres" && favItems.length > 0) {
-        const hr = document.createElement('hr');
-        container.appendChild(hr);
-      }
-    
-      for (const [key, seconds] of list) {
-        const card = document.createElement('div');
-        card.className = 'channel-card clickable';
-        card.dataset.channel = key.toLowerCase();
-    
-        let overlayHTML = '';
-    
-        const watchingStatus = currentWatching[key.toLowerCase()];
-    
-        if (mode !== 'category' && watchingStatus) {
-          card.classList.add('watching-now');
-    
-          if (watchingStatus.isPaused) {
-            overlayHTML = `<div class="status-overlay paused">Pause</div>`;
-          } else if (watchingStatus.isMuted) {
-            overlayHTML = `<div class="status-overlay muted">Muted</div>`;
-          }
-        }
-    
-        const avatar = `<div class="avatar" data-channel="${key}"><span>${key[0].toUpperCase()}</span></div>`;
-        card.innerHTML = `
-          ${overlayHTML}
-          <div class="top-row">
-            <div class="left">
-              ${avatar}
-              <strong class="channel-name">${key}</strong>
-            </div>
-            <div class="right">
-              <span class="channel-time">${formatTime(seconds)}</span>
-            </div>
-          </div>
-        `;
-    
-        if (mode === 'total' || mode === '7days') {
-          card.addEventListener('click', () => {
-            showChannelDetails(key.toLowerCase(), sessionsData);
-          });
-        } else if (mode === 'week') {
-          card.addEventListener('click', () => {
-            showWeekDetails(key, sessionsData);
-          });
-        } else if (mode === 'month') {
-          card.addEventListener('click', () => {
-            showMonthDetails(key, sessionsData); // ➔ la nouvelle fonction !
-          });
-        } else if (mode === 'category') {
-          card.addEventListener('click', () => {
-            showCategoryDetails(key, sessionsData);
-          });
-        }     
-    
-        container.appendChild(card);
-        setTimeout(() => {
-          const avatarDiv = card.querySelector('.avatar');
-          if (avatarDiv) {
-            setAvatar(avatarDiv, key.toLowerCase(), sessionsData);
-          }
-        }, 0);
-      }
-    }      
-
+  function renderAvatarWithLiveStatus(card, channel) {
+    const avatarDiv = card.querySelector('.avatar');
+    if (avatarDiv) {
+      setTimeout(() => {
+        setAvatar(avatarDiv, channel.toLowerCase(), sessionsData);
+      }, 0);
+    }
+  }  
+  
+  function setupShowMoreButton(items) {
     const isSearching = document.getElementById('searchInput')?.value.trim().length > 0;
-    if (!showingAll && !isSearching && nonFavItems.length > 6) {
+    if (!showingAll && !isSearching && items.length > 6) {
       const moreBtn = document.createElement('button');
       moreBtn.className = 'reset-button';
       moreBtn.textContent = 'Voir plus...';
       moreBtn.addEventListener('click', () => {
         showingAll = true;
-        displayStreamers(mode);
+        displayStreamers(filterSelect.value);
       });
       container.appendChild(moreBtn);
     }
-
-    const searchInput = document.getElementById('searchInput');
-    searchInput.removeEventListener('input', handleSearch);
-    searchInput.addEventListener('input', handleSearch);
-    
+  }
+  
+  function setupSearchInput(mode) {
+    const input = document.getElementById('searchInput');
+    input.removeEventListener('input', handleSearch);
+    input.addEventListener('input', handleSearch);
+  
     function handleSearch(e) {
       const searchTerm = e.target.value.toLowerCase();
-
       if (searchTerm.length === 0 && showingAll) {
         displayStreamers(mode);
       }
-    
       if (!showingAll && searchTerm.length >= 1) {
         showingAll = true;
         displayStreamers(mode);
         return;
       }
-    
-      const allCards = document.querySelectorAll('.channel-card');
-      allCards.forEach(card => {
+  
+      document.querySelectorAll('.channel-card').forEach(card => {
         const channel = card.dataset.channel?.toLowerCase();
         card.style.display = channel.includes(searchTerm) ? 'flex' : 'none';
       });
-    }       
+    }
+  }  
+
+  function createChannelCard(channelName, seconds, mode, isFavorite = false) {
+    const lowerName = channelName.toLowerCase();
+    const card = document.createElement('div');
+    card.className = 'channel-card clickable';
+    if (isFavorite) card.classList.add('fav-card');
+    card.dataset.channel = lowerName;
+  
+    // Overlay (pause/mute)
+    let overlayHTML = '';
+    const watchingStatus = currentWatching[lowerName];
+    if (mode !== 'category' && watchingStatus) {
+      card.classList.add('watching-now');
+      if (watchingStatus.isPaused) {
+        overlayHTML = `<div class="status-overlay paused">Pause</div>`;
+      } else if (watchingStatus.isMuted) {
+        overlayHTML = `<div class="status-overlay muted">Muted</div>`;
+      }
+    }
+  
+    // Avatar avec placeholder (LIVE badge sera ajouté plus tard si nécessaire)
+    const avatarHTML = `<div class="avatar" data-channel="${channelName}">
+      <span>${channelName[0].toUpperCase()}</span>
+    </div>`;
+  
+    // Construction de la carte HTML
+    card.innerHTML = `
+      ${overlayHTML}
+      <div class="top-row">
+        <div class="left">
+          ${avatarHTML}
+          <strong class="channel-name">${channelName}</strong>
+        </div>
+        <div class="right">
+          <span class="channel-time">${formatTime(seconds)}</span>
+        </div>
+      </div>
+    `;
+  
+    // Ajoute l’avatar (récupération locale ou API)
+    setTimeout(() => {
+      const avatarDiv = card.querySelector('.avatar');
+      if (avatarDiv) {
+        setAvatar(avatarDiv, lowerName, sessionsData, () => {
+          // Une fois avatar chargé, on peut potentiellement y ajouter le badge LIVE
+          maybeAddLiveBadge(avatarDiv, lowerName);
+        });
+      }
+    }, 0);
+  
+    // Ajoute le bon comportement au clic selon le mode
+    const handlerMap = {
+      total: () => showChannelDetails(lowerName, sessionsData),
+      '7days': () => showChannelDetails(lowerName, sessionsData),
+      week: () => showWeekDetails(channelName, sessionsData),
+      month: () => showMonthDetails(channelName, sessionsData),
+      category: () => showCategoryDetails(channelName, sessionsData)
+    };
+    card.addEventListener('click', handlerMap[mode]);
+  
+    return card;
   }
+  
+  function maybeAddLiveBadge(avatarDiv, channelName) {
+    chrome.storage.local.get(['twitchApi', 'avatars', 'sessions'], (result) => {
+      const { twitchApi, avatars = {}, sessions = {} } = result;
+      const meta = avatars[channelName];
+      const userId = meta?.twitchId;
+  
+      // Conditions minimales
+      if (!twitchApi?.clientId || !twitchApi?.token || !userId) return;
+  
+      const totalSeconds = Object.values(sessions).reduce((acc, channels) => {
+        return acc + (channels[channelName]?.total || 0);
+      }, 0);
+  
+      if (totalSeconds < 600) return; // Moins de 10 min, on skip
+  
+      // Vérifie si on a déjà une info live récente
+      const now = Date.now();
+      if (meta.liveCheckedAt && now - meta.liveCheckedAt < 5 * 60 * 1000) return; // < 5 min, skip
+  
+      const headers = {
+        'Client-ID': twitchApi.clientId,
+        'Authorization': `Bearer ${twitchApi.token}`
+      };
+  
+      fetch(`https://api.twitch.tv/helix/streams?user_id=${userId}`, { headers })
+        .then(res => res.json())
+        .then(data => {
+          const stream = data?.data?.[0];
+          if (stream) {
+            // Ajoute un badge LIVE
+            const liveBadge = document.createElement('span');
+            liveBadge.textContent = 'LIVE';
+            liveBadge.className = 'live-badge';
+            avatarDiv.appendChild(liveBadge);
+  
+            // Sauvegarde l'état + date pour éviter les appels répétitifs
+            avatars[channelName] = {
+              ...meta,
+              isLive: true,
+              liveCheckedAt: now
+            };
+          } else {
+            avatars[channelName] = {
+              ...meta,
+              isLive: false,
+              liveCheckedAt: now
+            };
+          }
+  
+          chrome.storage.local.set({ avatars });
+        })
+        .catch(() => {});
+    });
+  }  
 
   function toggleFavorite(channelName) {
     const lower = channelName.toLowerCase();
@@ -572,7 +602,7 @@ function getDatesOfWeek(weekKey) {
     });
   }  
 
-  function showChannelDetails(channel, sessions) {
+  function showChannelDetails(channel, sessions, liveInfo = null) {
     window.scrollTo(0, 0);
 
     fetchAndStoreTwitchMeta(channel, (meta) => {
@@ -601,6 +631,12 @@ function getDatesOfWeek(weekKey) {
             <div class="meta-label">${label}</div>
           </div>
         `;
+      }
+
+      if (liveInfo) {
+        const liveEl = document.createElement('p');
+        liveEl.innerHTML = `🔴 <strong>En direct</strong> — ${liveInfo.title} <br> 🎮 ${liveInfo.gameName} | ${formatDurationSince(liveInfo.startedAt)}`;
+        detailsContainer.insertBefore(liveEl, detailsContainer.children[2]);
       }
       
       if (meta.createdAt) {
@@ -713,6 +749,9 @@ function getDatesOfWeek(weekKey) {
     avatarRow.appendChild(avatarProfile);
     avatarRow.appendChild(nameLink);
     detailsContainer.appendChild(avatarRow);
+
+    insertLiveInfo(channel.toLowerCase(), detailsContainer);
+
     setAvatar(avatarProfile, channel.toLowerCase(), sessions);  
   
     const externalLink = document.createElement('p');
@@ -811,49 +850,100 @@ function getDatesOfWeek(weekKey) {
     document.getElementById('backButton').style.display = 'block';
   }  
 
-  function showCategoryDetails(category, sessions) {
-    window.scrollTo(0, 0);
-    const detailsContainer = document.getElementById('channelDetails');
-    detailsContainer.innerHTML = '';
+  function insertLiveInfo(channelName, container) {
+    chrome.storage.local.get(['twitchApi', 'avatars'], (result) => {
+      const { twitchApi, avatars = {} } = result;
+      const meta = avatars[channelName.toLowerCase()];
+      const userId = meta?.twitchId;
+  
+      if (!twitchApi?.clientId || !twitchApi?.token || !userId) return;
+  
+      const headers = {
+        'Client-ID': twitchApi.clientId,
+        'Authorization': `Bearer ${twitchApi.token}`
+      };
+  
+      fetch(`https://api.twitch.tv/helix/streams?user_id=${userId}`, { headers })
+        .then(res => res.json())
+        .then(data => {
+          const stream = data?.data?.[0];
+          if (!stream) return;
+  
+          const game = stream.game_name;
+          const title = stream.title;
+          const diffMs = Date.now() - new Date(stream.started_at).getTime();
+          const hours = Math.floor(diffMs / 3600000);
+          const minutes = Math.floor((diffMs % 3600000) / 60000);
+          const duration = hours > 0 ? `${hours}h ${minutes}min` : `${minutes}min`;
+          const liveText = `
+            <div class="live-banner">
+              🟣 En live depuis <strong>${duration}</strong> — 
+              <span class="game-name">${stream.game_name}</span><br>
+              <span class="stream-title">"${stream.title}"</span>
+            </div>
+          `;
+            
+          const p = document.createElement('p');
+          p.innerHTML = liveText;
+          p.style.marginTop = '8px';
+          p.style.color = '#38bdf8';
+          p.style.fontSize = '14px';
+  
+          container.insertBefore(p, container.querySelector('p')); // juste après l'avatar
+        });
+    });
+  }  
 
-    let total = 0;
-    const byStreamer = {};
+function showCategoryDetails(category, sessions) {
+  window.scrollTo(0, 0);
+  const detailsContainer = document.getElementById('channelDetails');
+  detailsContainer.innerHTML = '';
 
-    for (const [date, channels] of Object.entries(sessions)) {
-      for (const [streamer, data] of Object.entries(channels)) {
-        const sec = data.categories?.[category];
-        if (sec) {
-          total += sec;
-          byStreamer[streamer] = (byStreamer[streamer] || 0) + sec;
-        }
+  let total = 0;
+  const byStreamer = {};
+
+  for (const [date, channels] of Object.entries(sessions)) {
+    for (const [streamer, data] of Object.entries(channels)) {
+      const sec = data.categories?.[category];
+      if (sec) {
+        total += sec;
+        byStreamer[streamer] = (byStreamer[streamer] || 0) + sec;
       }
     }
-
-    const title = document.createElement('h2');
-    title.textContent = `Catégorie : ${category}`;
-    detailsContainer.appendChild(title);
-
-    const totalText = document.createElement('p');
-    totalText.innerHTML = `⏱ <strong>Temps total</strong> : ${formatTime(total)}`;
-    detailsContainer.appendChild(totalText);
-
-    const list = document.createElement('div');
-    list.className = 'detail-block';
-    list.innerHTML = `<div class="section-title">🎥 Par streamer :</div>`;
-    const sorted = Object.entries(byStreamer).sort((a, b) => b[1] - a[1]);
-    for (const [name, seconds] of sorted) {
-      const p = document.createElement('p');
-      p.innerHTML = `<a href="https://twitch.tv/${name}" target="_blank" class="channel-link">${name}</a> : ${formatTime(seconds)}`;
-      list.appendChild(p);
-    }
-    detailsContainer.appendChild(list);
-
-    document.getElementById('mainView').classList.add('hidden');
-    document.getElementById('detailsView').classList.remove('hidden');
-    document.getElementById('backButton').style.display = 'block';
   }
 
-  // Reste des fonctions helpers inchangées (getTotalStreamTimes, etc.)
+  const title = document.createElement('h2');
+  title.textContent = `Catégorie : ${category}`;
+  detailsContainer.appendChild(title);
+
+  const totalText = document.createElement('p');
+  totalText.innerHTML = `⏱ <strong>Temps total</strong> : ${formatTime(total)}`;
+  detailsContainer.appendChild(totalText);
+
+  const list = document.createElement('div');
+  list.className = 'detail-block';
+  list.innerHTML = `<div class="section-title">🎥 Par streamer :</div>`;
+
+  const sorted = Object.entries(byStreamer).sort((a, b) => b[1] - a[1]);
+  for (const [name, seconds] of sorted) {
+    const p = document.createElement('p');
+    p.innerHTML = `<span class="channel-link" style="cursor:pointer;">${name}</span> : ${formatTime(seconds)}`;
+  
+    const span = p.querySelector('span.channel-link');
+    span.addEventListener('click', () => {
+      showChannelDetails(name.toLowerCase(), sessions);
+    });
+  
+    list.appendChild(p);
+  }  
+
+  detailsContainer.appendChild(list);
+
+  document.getElementById('mainView').classList.add('hidden');
+  document.getElementById('detailsView').classList.remove('hidden');
+  document.getElementById('backButton').style.display = 'block';
+}
+
 });
 
 function getTotalByCategory(sessions) {

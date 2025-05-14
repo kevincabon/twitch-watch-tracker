@@ -740,3 +740,45 @@ body {
   font-size: 13.5px;
   color: #e0e0e0;
 }
+
+.live-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: #e91916;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 5px;
+  border-radius: 6px;
+  box-shadow: 0 0 4px #000;
+  text-transform: uppercase;
+}
+
+.live-banner {
+  background: linear-gradient(90deg, #9146ff20, #6441a530);
+  border: 1px solid #9146ff55;
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #bcbcff;
+  font-size: 14px;
+  margin: 12px 0;
+  box-shadow: 0 2px 8px #00000022;
+  line-height: 1.4;
+}
+
+.live-banner strong {
+  color: #fff;
+}
+
+.live-banner .game-name {
+  color: #a8c1ff;
+  font-weight: 600;
+}
+
+.live-banner .stream-title {
+  display: block;
+  margin-top: 4px;
+  color: #d4d4f8;
+  font-style: italic;
+}

@@ -2,6 +2,30 @@
 
 Toutes les modifications importantes de Twitch Watch Tracker seront listées ici.
 
+## [v0.5.2-beta] - 2025-05-14
+
+### Ajouté
+- 🟣 Intégration partielle de l’API Twitch (si activée via options)
+- Affichage d’un badge **LIVE** sur les avatars des chaînes en direct (si plus de 10 minutes de visionnage)
+- Détails enrichis dans la vue d’une chaîne :
+  - 🎮 Jeu en cours de stream
+  - 🕒 Durée depuis le début du live
+  - ✏️ Titre du stream en cours
+- 🧾 Informations Twitch ajoutées dans les détails :
+  - Suivi de la chaîne (depuis quand)
+  - Statut partenaire/affilié
+  - Date de création de la chaîne
+- 🔄 Bouton "Mettre à jour" dans la page détails pour forcer une actualisation des avatars et métadonnées (API requise)
+
+### Amélioré
+- 💅 Présentation plus élégante des métadonnées de chaîne
+- 🔍 Refactor partiel de `displayStreamers()` pour séparer les favoris et autres streamers
+
+### Limitations connues
+- 🚧 Les badges **LIVE** peuvent parfois ne pas apparaître immédiatement sur les 6 premières chaînes si l’API Twitch a été lente à répondre ou en cas de quota.
+
+---
+
 ## [v0.5.1-beta] - 2025-05-14
 
 ### Ajouté
