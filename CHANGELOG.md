@@ -2,6 +2,26 @@
 
 Toutes les modifications importantes de Twitch Watch Tracker seront listées ici.
 
+## [v0.5.1-beta] - 2025-05-14
+
+### Ajouté
+- 🔍 **Nouvelles informations affichées dans les détails des chaînes** :
+  - Suivi de la chaîne (si l'utilisateur suit et depuis quand)
+  - Statut partenaire ou affilié
+  - Date de création de la chaîne
+- 📦 **Stockage local** des métadonnées (`twitchMeta`) pour limiter les requêtes API
+- 🔄 **Bouton “Mettre à jour”** dans les détails d'une chaîne pour forcer le rafraîchissement des infos (avatar, follow, etc.)
+
+### Technique
+- 📁 Nouveau fichier `twitchMeta.js` pour gérer l’appel à l’API Twitch Helix
+- ⌛ Les métadonnées expirent après 3 semaines (comme les avatars)
+- 🔒 Vérification automatique de la connexion à l’API via `twitchApi` dans le stockage local
+
+### Amélioré
+- 🎨 Refonte du bloc d'affichage des métadonnées dans la vue détaillée (meilleure lisibilité, disposition en ligne)
+
+---
+
 ## [v0.5.0-beta] - 2025-05-14
 
 ### ✨ Ajouté

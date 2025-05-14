@@ -29,6 +29,27 @@ document.addEventListener('DOMContentLoaded', () => {
   detailsView.classList.add('hidden');
   container.innerHTML = '';
 
+  chrome.storage.local.get(['twitchApi'], (result) => {
+    const twitchApi = result.twitchApi;
+    if (twitchApi?.clientId && twitchApi?.token && !twitchApi.userId) {
+      fetch('https://api.twitch.tv/helix/users', {
+        headers: {
+          'Client-ID': twitchApi.clientId,
+          'Authorization': `Bearer ${twitchApi.token}`
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        const user = data?.data?.[0];
+        if (user?.id) {
+          twitchApi.userId = user.id;
+          chrome.storage.local.set({ twitchApi });
+          console.log('[Twitch Watch Tracker] ✅ ID utilisateur Twitch enregistré:', user.id);
+        }
+      });
+    }
+  });
+
 
 function showWeekDetails(weekKey) {
   const detailsContainer = document.getElementById('channelDetails');
@@ -553,6 +574,50 @@ function getDatesOfWeek(weekKey) {
 
   function showChannelDetails(channel, sessions) {
     window.scrollTo(0, 0);
+
+    fetchAndStoreTwitchMeta(channel, (meta) => {
+      if (!meta) return;
+    
+      const infoContainer = document.createElement('div');
+      infoContainer.className = 'meta-summary';
+      
+      if (meta?.isFollowing && meta?.followedAt) {
+        const date = new Date(meta.followedAt).toLocaleDateString('fr-FR');
+        infoContainer.innerHTML += `
+          <div class="meta-item">
+            <div class="meta-icon">👤</div>
+            <div class="meta-label">Depuis</div>
+            <div class="meta-value">${date}</div>
+          </div>
+        `;
+      }
+      
+      if (meta.broadcasterType === 'affiliate' || meta.broadcasterType === 'partner') {
+        const icon = meta.broadcasterType === 'partner' ? '🏆' : '🎉';
+        const label = meta.broadcasterType === 'partner' ? 'Partenaire' : 'Affiliée';
+        infoContainer.innerHTML += `
+          <div class="meta-item">
+            <div class="meta-icon">${icon}</div>
+            <div class="meta-label">${label}</div>
+          </div>
+        `;
+      }
+      
+      if (meta.createdAt) {
+        const created = new Date(meta.createdAt).toLocaleDateString('fr-FR');
+        infoContainer.innerHTML += `
+          <div class="meta-item">
+            <div class="meta-icon">📅</div>
+            <div class="meta-label">Créée</div>
+            <div class="meta-value">${created}</div>
+          </div>
+        `;
+      }
+      
+      detailsContainer.insertBefore(infoContainer, detailsContainer.children[1]);      
+    }); 
+
+
     function createExpandableList(title, items, formatter) {
       const container = document.createElement('div');
       container.className = 'detail-block';
@@ -568,7 +633,7 @@ function getDatesOfWeek(weekKey) {
       container.appendChild(list);
     
       let showingAll = false;
-      const limit = 5;
+      const limit = 5;     
     
       function render() {
         list.innerHTML = '';
@@ -708,20 +773,31 @@ function getDatesOfWeek(weekKey) {
       feedbackMsg.style.marginTop = '6px';
     
       refreshBtn.addEventListener('click', () => {
+        const lowerChannel = channel.toLowerCase();
+      
+        // Supprimer l'avatar en cache
         chrome.storage.local.get(['avatars'], (result) => {
           const avatars = result.avatars || {};
-          delete avatars[channel.toLowerCase()];
+          delete avatars[lowerChannel];
           chrome.storage.local.set({ avatars }, () => {
             const avatarDiv = detailsContainer.querySelector('.avatar');
             if (avatarDiv) {
-              setAvatar(avatarDiv, channel.toLowerCase(), sessions, () => {
-                feedbackMsg.textContent = '✅ Mise à jour effectuée';
-                setTimeout(() => (feedbackMsg.textContent = ''), 2000);
+              setAvatar(avatarDiv, lowerChannel, sessions, () => {
+                // Maintenant mettre à jour les données Twitch
+                fetchAndStoreTwitchMeta(lowerChannel, (meta) => {
+                  if (meta) {
+                    showChannelDetails(lowerChannel, sessions);
+                    feedbackMsg.textContent = '✅ Mise à jour effectuée';
+                  } else {
+                    feedbackMsg.textContent = '❌ Erreur lors de la mise à jour';
+                  }
+                  setTimeout(() => (feedbackMsg.textContent = ''), 2500);
+                }, true); // 🔁 Force refresh
               });
             }
           });
         });
-      });
+      });      
     
       // 🔼 Ajoute les éléments AVANT le bouton supprimer
       detailsContainer.insertBefore(refreshBtn, deleteBtn);

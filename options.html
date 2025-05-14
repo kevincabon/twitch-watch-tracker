@@ -73,20 +73,28 @@
 <body>
   <div class="options-container">
     <a href="popup.html" class="options-back">← Retour au menu</a>
-    <div class="options-title">Options Twitch Watch Tracker</div>
+    <div class="options-title">Options Twitch Watch Tracker</div> 
     <form class="options-form" id="twitchApiForm">
-      <label for="clientId">Client-ID Twitch</label>
-      <input type="text" id="clientId" name="clientId" placeholder="Votre Client-ID Twitch..." autocomplete="off">
-      <label for="token">Token d'accès OAuth</label>
-      <input type="password" id="token" name="token" placeholder="Votre token OAuth..." autocomplete="off">
-      <button type="submit" class="reset-button fav-btn">💾 Sauvegarder les identifiants API</button>
-    </form>
+        <label for="clientId">Client-ID Twitch</label>
+        <input type="text" id="clientId" name="clientId" placeholder="Votre Client-ID Twitch..." autocomplete="off">
+      
+        <label for="token">Token d'accès OAuth</label>
+        <input type="password" id="token" name="token" placeholder="Votre token OAuth..." autocomplete="off">
+      
+        <small style="display: block; margin-top: -10px; margin-bottom: 12px; font-size: 13px;">
+          <a href="https://twitchtokengenerator.com" target="_blank" style="color: #38bdf8; text-decoration: underline;">
+            🔑 Générer un token OAuth Twitch (scope requis : <code>user:read:follows</code>)
+          </a>
+        </small>
+      
+        <button type="submit" class="reset-button fav-btn">💾 Sauvegarder les identifiants API</button>
+    </form>      
     <div class="options-actions">
       <button id="exportButton" class="reset-button menu-button">📥 Exporter JSON</button>
       <button id="importButton" class="reset-button menu-button">📤 Importer JSON</button>
       <button id="resetButton" class="reset-button delete-btn">🗑️ Réinitialiser les données</button>
       <input type="file" id="fileInput" accept=".json" style="display: none;" />
-      <p>Version : 0.5.0-beta</p>
+      <p>Version : 0.5.1-beta</p>
     </div>
     <div class="options-message" id="optionsMessage"></div>
   </div>

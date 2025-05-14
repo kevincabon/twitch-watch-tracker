@@ -19,8 +19,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const clientId = clientIdInput.value.trim();
     const token = tokenInput.value.trim();
     chrome.storage.local.set({ twitchApi: { clientId, token } }, () => {
-      message.textContent = '✅ Identifiants API sauvegardés !';
-      setTimeout(() => { message.textContent = ''; }, 2000);
+        message.textContent = '✅ Identifiants API sauvegardés !';
+
+        // Appel pour récupérer l'ID utilisateur
+        fetch("https://api.twitch.tv/helix/users", {
+          headers: {
+            'Client-ID': clientId,
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        .then(res => res.json())
+        .then(data => {
+          const user = data?.data?.[0];
+          if (user?.id) {
+            chrome.storage.local.set({ twitchApi: { clientId, token, userId: user.id } }, () => {
+              console.log("✅ userId ajouté :", user.id);
+            });
+          }
+        })
+        .catch(err => console.error("Erreur récupération userId :", err));
+      
+        setTimeout(() => { message.textContent = ''; }, 2000);
     });
   });
 
@@ -77,3 +96,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 }); 
+
+  
