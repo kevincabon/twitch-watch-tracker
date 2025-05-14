@@ -2,6 +2,22 @@
 
 Toutes les modifications importantes de Twitch Watch Tracker seront listées ici.
 
+## [v0.4.6-beta] - 2025-05-14
+
+### Ajouté
+- Section "📺 En cours de lecture" dans la popup, affichant les chaînes actives en temps réel
+- Statuts visuels (▶️, ⏸️, 🔇) en fonction de l’état du stream
+- Lien vers TwitchTracker sur la page de détails des chaînes
+
+### Amélioré
+- Affichage plus compact du lien externe sous le nom de la chaîne
+- Séparateur visuel harmonisé pour une interface plus propre
+
+### Corrigé
+- Nettoyage automatique des chaînes inactives dans `currentWatching`
+
+---
+
 ## [0.4.5-beta] - 2025-05-12
 
 ### Ajouté

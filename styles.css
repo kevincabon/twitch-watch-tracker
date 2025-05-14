@@ -335,5 +335,19 @@ body {
     width: 100%;
     height: 300px;
   }
+
+  #nowWatching {
+    margin-bottom: 4px;
+    padding-bottom: 8px;
+  }
   
+  .channel-now {
+    margin: 4px 0;
+    cursor: pointer;
+    color: #fff;
+  }
+  
+  .channel-now:hover {
+    text-decoration: underline;
+  }
   
