@@ -7,6 +7,13 @@ function formatTime(seconds) {
   return `${h}h ${m}m ${s}s`;
 }
 
+function isTwitchApiAvailable(callback) {
+  chrome.storage.local.get(['twitchApi'], (result) => {
+    const api = result.twitchApi || {};
+    callback(api.clientId && api.token);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const mainView = document.getElementById('mainView');
   const detailsView = document.getElementById('detailsView');
@@ -22,59 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
   detailsView.classList.add('hidden');
   container.innerHTML = '';
 
-  const optionsButton = document.getElementById('optionsButton');
-  const optionsMenu = document.getElementById('optionsMenu');
-
-  optionsButton.addEventListener('click', (e) => {
-    e.stopPropagation();
-    optionsMenu.classList.toggle('hidden');
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!optionsMenu.contains(e.target) && e.target !== optionsButton) {
-      optionsMenu.classList.add('hidden');
-    }
-  });
-
-  document.getElementById('exportButton').addEventListener('click', exportData);
-  document.getElementById('importButton').addEventListener('click', () => {
-    document.getElementById('fileInput').click();
-  });
-  document.getElementById('resetButton').addEventListener('click', resetData);
-  document.getElementById('fileInput').addEventListener('change', importData);
-
-function exportData() {
-  chrome.storage.local.get(null, (items) => {
-    const blob = new Blob([JSON.stringify(items)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const now = new Date().toISOString().replace('T', '__').replace(/\..+/, '');
-    a.href = url;
-    a.download = `twitch_watch_data_${now}.json`;    
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-}
-
-function importData() {
-  const fileInput = document.getElementById('fileInput');
-  const file = fileInput.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const data = JSON.parse(e.target.result);
-      chrome.storage.local.set(data, () => {
-        alert('✅ Données importées !');
-        window.location.reload();
-      });
-    } catch (err) {
-      alert('❌ Fichier invalide.');
-    }
-  };
-  reader.readAsText(file);
-}
 
 function showWeekDetails(weekKey) {
   const detailsContainer = document.getElementById('channelDetails');
@@ -123,15 +77,18 @@ function showWeekDetails(weekKey) {
   new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: weekDates.map(getShortDayName), // ["lun.", "mar.", ...]
+      labels: weekDates.map(getShortDayName),
       datasets: [{
         label: 'Temps par jour (minutes)',
         data: weekDates.map(d => Math.round(daysData[d] / 60)),
-        backgroundColor: '#9146ff'
+        backgroundColor: '#9146ff',
+        barPercentage: 0.6,
+        categoryPercentage: 0.7
       }]
     },
     options: {
       responsive: true,
+      layout: { padding: 12 },
       plugins: {
         legend: { display: false }
       },
@@ -201,11 +158,14 @@ function showMonthDetails(monthKey) {
       datasets: [{
         label: 'Temps par semaine (minutes)',
         data: Object.values(weeksData).map(sec => Math.round(sec / 60)),
-        backgroundColor: '#9146ff'
+        backgroundColor: '#9146ff',
+        barPercentage: 0.6,
+        categoryPercentage: 0.7
       }]
     },
     options: {
       responsive: true,
+      layout: { padding: 12 },
       plugins: {
         legend: { display: false }
       },
@@ -258,15 +218,6 @@ function getDatesOfWeek(weekKey) {
   return dates;
 }
 
-function resetData() {
-  if (confirm('⚠️ Êtes-vous sûr de vouloir tout réinitialiser ?')) {
-    chrome.storage.local.clear(() => {
-      alert('✅ Données réinitialisées.');
-      window.location.reload();
-    });
-  }
-}
-
   let currentWatching = {};
 
   chrome.storage.local.get(["sessions", "favorites", "currentWatching"], (result) => {
@@ -297,15 +248,18 @@ function resetData() {
     const activeNowContainer = document.getElementById('nowWatching');
     if (!activeNowContainer) return;
   
-    activeNowContainer.innerHTML = '';
-  
     const now = Date.now();
     const threshold = 5 * 60 * 1000;
   
     const activeChannels = Object.entries(currentWatching)
       .filter(([_, info]) => info.lastUpdate && now - info.lastUpdate <= threshold);
   
-    if (activeChannels.length === 0) return;
+    if (activeChannels.length === 0) {
+      activeNowContainer.style.display = 'none';
+      return;
+    }
+    activeNowContainer.style.display = '';
+    activeNowContainer.innerHTML = '';
   
     const title = document.createElement('div');
     title.className = 'section-title';
@@ -314,16 +268,21 @@ function resetData() {
   
     for (const [channel, info] of activeChannels) {
       const statusIcon = info.isPaused ? '⏸️' : info.isMuted ? '🔇' : '▶️';
+      const avatar = `<span class="now-avatar" data-channel="${channel}"><span>${channel[0].toUpperCase()}</span></span>`;
       const p = document.createElement('p');
       p.className = 'channel-now';
-      p.innerHTML = `${statusIcon} <strong>${channel}</strong>`;
+      p.innerHTML = `${avatar} <span>${statusIcon}</span> <strong>${channel}</strong>`;
       p.addEventListener('click', () => {
         showChannelDetails(channel, sessionsData);
       });
       activeNowContainer.appendChild(p);
+      setTimeout(() => {
+        const avatarDiv = p.querySelector('.now-avatar');
+        if (avatarDiv) {
+          setAvatar(avatarDiv, channel.toLowerCase(), sessionsData);
+        }
+      }, 0);
     }
-    const hr = document.createElement('hr');
-    activeNowContainer.appendChild(hr)
   }  
 
   filterSelect.addEventListener('change', () => {
@@ -392,6 +351,70 @@ function resetData() {
     const limitedNonFav = showingAll ? nonFavItems : nonFavItems.slice(0, 6);
 
     for (const [listName, list] of [["Favoris", favItems], ["Autres", limitedNonFav]]) {
+      if (listName === "Favoris" && list.length > 0) {
+        const favTitle = document.createElement('div');
+        favTitle.className = 'fav-section-title';
+        favTitle.innerHTML = '⭐ Favoris';
+        container.appendChild(favTitle);
+        const favBg = document.createElement('div');
+        favBg.className = 'fav-section-bg';
+        favBg.id = 'favSectionBg';
+        container.appendChild(favBg);
+        for (const [key, seconds] of list) {
+          const card = document.createElement('div');
+          card.className = 'channel-card clickable fav-card';
+          card.dataset.channel = key.toLowerCase();
+          let overlayHTML = '';
+          const watchingStatus = currentWatching[key.toLowerCase()];
+          if (mode !== 'category' && watchingStatus) {
+            card.classList.add('watching-now');
+            if (watchingStatus.isPaused) {
+              overlayHTML = `<div class="status-overlay paused">Pause</div>`;
+            } else if (watchingStatus.isMuted) {
+              overlayHTML = `<div class="status-overlay muted">Muted</div>`;
+            }
+          }
+          const avatar = `<div class="avatar" data-channel="${key}"><span>${key[0].toUpperCase()}</span></div>`;
+          card.innerHTML = `
+            ${overlayHTML}
+            <div class="top-row">
+              <div class="left">
+                ${avatar}
+                <strong class="channel-name">${key}</strong>
+              </div>
+              <div class="right">
+                <span class="channel-time">${formatTime(seconds)}</span>
+              </div>
+            </div>
+          `;
+          if (mode === 'total' || mode === '7days') {
+            card.addEventListener('click', () => {
+              showChannelDetails(key.toLowerCase(), sessionsData);
+            });
+          } else if (mode === 'week') {
+            card.addEventListener('click', () => {
+              showWeekDetails(key, sessionsData);
+            });
+          } else if (mode === 'month') {
+            card.addEventListener('click', () => {
+              showMonthDetails(key, sessionsData);
+            });
+          } else if (mode === 'category') {
+            card.addEventListener('click', () => {
+              showCategoryDetails(key, sessionsData);
+            });
+          }
+          favBg.appendChild(card);
+          setTimeout(() => {
+            const avatarDiv = card.querySelector('.avatar');
+            if (avatarDiv) {
+              setAvatar(avatarDiv, key.toLowerCase(), sessionsData);
+            }
+          }, 0);
+        }
+        continue;
+      }
+    
       if (list.length > 0 && listName === "Autres" && favItems.length > 0) {
         const hr = document.createElement('hr');
         container.appendChild(hr);
@@ -416,11 +439,12 @@ function resetData() {
           }
         }
     
+        const avatar = `<div class="avatar" data-channel="${key}"><span>${key[0].toUpperCase()}</span></div>`;
         card.innerHTML = `
           ${overlayHTML}
           <div class="top-row">
             <div class="left">
-              ${mode === 'category' ? `<span class="icon">🎮</span>` : ''}
+              ${avatar}
               <strong class="channel-name">${key}</strong>
             </div>
             <div class="right">
@@ -448,6 +472,12 @@ function resetData() {
         }     
     
         container.appendChild(card);
+        setTimeout(() => {
+          const avatarDiv = card.querySelector('.avatar');
+          if (avatarDiv) {
+            setAvatar(avatarDiv, key.toLowerCase(), sessionsData);
+          }
+        }, 0);
       }
     }      
 
@@ -522,6 +552,7 @@ function resetData() {
   }  
 
   function showChannelDetails(channel, sessions) {
+    window.scrollTo(0, 0);
     function createExpandableList(title, items, formatter) {
       const container = document.createElement('div');
       container.className = 'detail-block';
@@ -546,7 +577,12 @@ function resetData() {
         for (const [key, value] of displayedItems) {
           const p = document.createElement('p');
           p.className = 'expandable-item';
-          p.textContent = formatter(key, value);
+          const formatted = formatter(key, value);
+          if (/<.*>/.test(formatted)) {
+            p.innerHTML = formatted;
+          } else {
+            p.textContent = formatted;
+          }
           list.appendChild(p);
         
           // Animation légère
@@ -592,10 +628,28 @@ function resetData() {
   
     const average = total / Object.keys(byDay).length || 0;
   
-    const title = document.createElement('h2');
-    title.innerHTML = `Détails : <a href="https://twitch.tv/${channel}" target="_blank" class="channel-link">${channel}</a>`;
-    detailsContainer.appendChild(title);
-
+    const avatarRow = document.createElement('div');
+    avatarRow.style.display = 'flex';
+    avatarRow.style.alignItems = 'center';
+    avatarRow.style.justifyContent = 'center';
+    avatarRow.style.gap = '14px';
+    avatarRow.style.margin = '0 0 18px 0';
+    const avatarProfile = document.createElement('div');
+    avatarProfile.className = 'avatar';
+    avatarProfile.style.margin = '0';
+    avatarProfile.innerHTML = `<span>${channel[0].toUpperCase()}</span>`;
+    const nameLink = document.createElement('a');
+    nameLink.href = `https://twitch.tv/${channel}`;
+    nameLink.target = '_blank';
+    nameLink.className = 'channel-link';
+    nameLink.style.fontSize = '20px';
+    nameLink.style.fontWeight = 'bold';
+    nameLink.textContent = channel;
+    avatarRow.appendChild(avatarProfile);
+    avatarRow.appendChild(nameLink);
+    detailsContainer.appendChild(avatarRow);
+    setAvatar(avatarProfile, channel.toLowerCase(), sessions);  
+  
     const externalLink = document.createElement('p');
     externalLink.innerHTML = `🔗 <a href="https://twitchtracker.com/${channel}" target="_blank" class="external-link">Voir sur TwitchTracker</a>`;
     detailsContainer.appendChild(externalLink);
@@ -609,8 +663,10 @@ function resetData() {
     detailsContainer.appendChild(avgText);
   
     const favBtn = document.createElement('button');
-    favBtn.className = 'reset-button';
-    favBtn.textContent = favorites.includes(channel.toLowerCase()) ? '❌ Retirer des favoris' : '⭐ Ajouter aux favoris';
+    favBtn.className = 'reset-button fav-btn';
+    favBtn.innerHTML = favorites.includes(channel.toLowerCase())
+      ? '⭐ Retirer des favoris'
+      : '⭐ Ajouter aux favoris';
     favBtn.addEventListener('click', () => {
       toggleFavorite(channel);
       document.getElementById('backButton').click();
@@ -618,8 +674,8 @@ function resetData() {
     detailsContainer.appendChild(favBtn);
   
     const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'reset-button';
-    deleteBtn.textContent = '🗑️ Supprimer cette chaîne';
+    deleteBtn.className = 'reset-button delete-btn';
+    deleteBtn.innerHTML = '🗑️ Supprimer cette chaîne';
     deleteBtn.addEventListener('click', () => {
       if (confirm(`Supprimer toutes les données pour ${channel} ?`)) {
         deleteChannelData(channel);
@@ -628,12 +684,51 @@ function resetData() {
     detailsContainer.appendChild(deleteBtn);
   
     const sortedCats = Object.entries(byCategory).sort((a, b) => b[1] - a[1]);
-    const catSection = createExpandableList("🎮 Par catégorie :", sortedCats, (cat, sec) => `${cat} : ${formatTime(sec)}`);
+    const catSection = createExpandableList(
+      "🎮 Par catégorie :",
+      sortedCats,
+      (cat, sec) => `<span class=\"cat-label\" title=\"${cat}\">${cat}</span> : ${formatTime(sec)}`
+    );
     detailsContainer.appendChild(catSection);
   
     const sortedDays = Object.entries(byDay).sort((a, b) => b[0].localeCompare(a[0]));
     const daySection = createExpandableList("📅 Par jour :", sortedDays, (date, sec) => `${date} : ${formatTime(sec)}`);
     detailsContainer.appendChild(daySection);
+
+    isTwitchApiAvailable((hasApi) => {
+      if (!hasApi) return;
+    
+      const refreshBtn = document.createElement('button');
+      refreshBtn.className = 'reset-button';
+      refreshBtn.textContent = '🔄 Mettre à jour';
+    
+      const feedbackMsg = document.createElement('p');
+      feedbackMsg.style.color = '#38bdf8';
+      feedbackMsg.style.fontSize = '14px';
+      feedbackMsg.style.marginTop = '6px';
+    
+      refreshBtn.addEventListener('click', () => {
+        chrome.storage.local.get(['avatars'], (result) => {
+          const avatars = result.avatars || {};
+          delete avatars[channel.toLowerCase()];
+          chrome.storage.local.set({ avatars }, () => {
+            const avatarDiv = detailsContainer.querySelector('.avatar');
+            if (avatarDiv) {
+              setAvatar(avatarDiv, channel.toLowerCase(), sessions, () => {
+                feedbackMsg.textContent = '✅ Mise à jour effectuée';
+                setTimeout(() => (feedbackMsg.textContent = ''), 2000);
+              });
+            }
+          });
+        });
+      });
+    
+      // 🔼 Ajoute les éléments AVANT le bouton supprimer
+      detailsContainer.insertBefore(refreshBtn, deleteBtn);
+      detailsContainer.insertBefore(feedbackMsg, deleteBtn);
+    });     
+  
+    detailsContainer.appendChild(deleteBtn);
   
     document.getElementById('mainView').classList.add('hidden');
     document.getElementById('detailsView').classList.remove('hidden');
@@ -641,6 +736,7 @@ function resetData() {
   }  
 
   function showCategoryDetails(category, sessions) {
+    window.scrollTo(0, 0);
     const detailsContainer = document.getElementById('channelDetails');
     detailsContainer.innerHTML = '';
 
@@ -768,4 +864,12 @@ function getISOWeek(date) {
   const firstThursday = new Date(target.getFullYear(), 0, 4);
   const diff = target - firstThursday;
   return 1 + Math.round(diff / (7 * 24 * 3600 * 1000));
+}
+
+// Ajoute une fonction utilitaire pour savoir si l'avatar doit être rafraîchi
+function shouldRefreshAvatar(fetchedAt) {
+  if (!fetchedAt) return true;
+  const now = Date.now();
+  const threeWeeks = 21 * 24 * 60 * 60 * 1000;
+  return now - fetchedAt > threeWeeks;
 }

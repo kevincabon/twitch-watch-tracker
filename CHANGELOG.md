@@ -2,6 +2,39 @@
 
 Toutes les modifications importantes de Twitch Watch Tracker seront listées ici.
 
+## [v0.5.0-beta] - 2025-05-14
+
+### ✨ Ajouté
+- 🧠 Nouvelle page `options.html` :
+  - Saisie du **Client-ID Twitch** et du **token OAuth**
+  - Gestion centralisée de l’export, import et reset des données
+- 🖼️ **Affichage automatique des images de profil Twitch** :
+  - En utilisant l’API Twitch (si disponible)
+  - En fallback via decapi.me
+- 🧩 **Système de cache intelligent des avatars** :
+  - Stockage local (`chrome.storage.local.avatars`) des images + `twitchId` + `fetchedAt`
+  - Mise à jour automatique tous les 21 jours
+- 🔄 Bouton **“Mettre à jour”** (visible uniquement si l’API est configurée) dans la page de détails pour rafraîchir les données manuellement
+- 📦 Nouveau fichier `apiHelpers.js` pour les appels à l'API Twitch
+
+### 🎨 Design/UI
+- 💅 **Refonte globale du style** :
+  - Avatars ronds, animés, avec gradient Twitch
+  - Style responsive, plus moderne, épuré et cohérent
+- ⭐ **Section Favoris** retravaillée :
+  - Encadré visuel dédié, séparation claire avec les autres chaînes
+  - Cartes favorites légèrement surélevées avec effet doré
+- 📺 **Section "En cours de lecture"** repensée :
+  - Avatars animés avec statut clair (▶️ / ⏸️ / 🔇)
+  - Bloc visuellement isolé en haut de l’interface
+
+### 🧪 Technique
+- Refactorisation de `setAvatar()` avec logique centralisée
+- Détection automatique de l’état de connexion à l’API avec `isTwitchApiAvailable()`
+- Support des chaînes sans image (fallback texte) si aucun accès API ou image invalide
+
+---
+
 ## [v0.4.7-beta] - 2025-05-14
 
 ### Ajouté

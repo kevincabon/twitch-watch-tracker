@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Options Twitch Watch Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .options-container {
+      max-width: 380px;
+      margin: 32px auto;
+      background: #232336;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px #9146ff22;
+      padding: 28px 22px 22px 22px;
+      color: #f4f4f5;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+    .options-title {
+      font-size: 22px;
+      font-weight: bold;
+      color: #9146ff;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .options-form label {
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: block;
+    }
+    .options-form input[type="text"], .options-form input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #444;
+      background: #18181b;
+      color: #fff;
+      margin-bottom: 14px;
+      font-size: 15px;
+      box-sizing: border-box;
+    }
+    .options-form input[type="text"]:focus, .options-form input[type="password"]:focus {
+      border-color: #9146ff;
+      outline: none;
+    }
+    .options-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .options-message {
+      margin-top: 10px;
+      color: #38bdf8;
+      text-align: center;
+      font-size: 15px;
+      min-height: 20px;
+    }
+    .options-back {
+      display: block;
+      margin: 0 auto 0 0;
+      color: #9146ff;
+      text-decoration: none;
+      font-size: 15px;
+      margin-bottom: 10px;
+    }
+    .options-back:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="options-container">
+    <a href="popup.html" class="options-back">← Retour au menu</a>
+    <div class="options-title">Options Twitch Watch Tracker</div>
+    <form class="options-form" id="twitchApiForm">
+      <label for="clientId">Client-ID Twitch</label>
+      <input type="text" id="clientId" name="clientId" placeholder="Votre Client-ID Twitch..." autocomplete="off">
+      <label for="token">Token d'accès OAuth</label>
+      <input type="password" id="token" name="token" placeholder="Votre token OAuth..." autocomplete="off">
+      <button type="submit" class="reset-button fav-btn">💾 Sauvegarder les identifiants API</button>
+    </form>
+    <div class="options-actions">
+      <button id="exportButton" class="reset-button menu-button">📥 Exporter JSON</button>
+      <button id="importButton" class="reset-button menu-button">📤 Importer JSON</button>
+      <button id="resetButton" class="reset-button delete-btn">🗑️ Réinitialiser les données</button>
+      <input type="file" id="fileInput" accept=".json" style="display: none;" />
+      <p>Version : 0.5.0-beta</p>
+    </div>
+    <div class="options-message" id="optionsMessage"></div>
+  </div>
+  <script src="options.js"></script>
+</body>
+</html> 

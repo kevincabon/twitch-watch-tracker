@@ -9,17 +9,10 @@
     <div class="container">
       <div class="header">
         <div class="title">Twitch Watch Stats</div>
-        <div id="optionsButton">⚙️</div>
+        <a href="options.html" class="options-button">⚙️</a>
       </div>
 
       <div id="totalWatchTime" class="subtitle"></div>
-      
-      <div id="optionsMenu" class="hidden">
-        <button id="exportButton" class="menu-button">📥 Exporter JSON</button>
-        <button id="importButton" class="menu-button">📤 Importer JSON</button>
-        <button id="resetButton" class="menu-button">🗑️ Reset Data</button>
-        <input type="file" id="fileInput" accept=".json" style="display: none;" />
-      </div>      
   
       <div id="mainView">
         <div class="filters">
@@ -31,7 +24,10 @@
               <option value="month">Par mois</option>
               <option value="category">Par catégorie</option>
             </select>
-            <input type="search" id="searchInput" placeholder="Rechercher une chaîne..." />
+            <div class="search-bar">
+              <span class="search-icon">🔍</span>
+              <input type="search" id="searchInput" placeholder="Rechercher une chaîne..." />
+            </div>
         </div>  
 
 
@@ -47,6 +43,7 @@
 
     <script src="libs/chart.umd.js"></script>
     <script src="stats.js"></script>
+    <script src="apiHelpers.js"></script>
     <script src="popup.js"></script>
   </body>
   
