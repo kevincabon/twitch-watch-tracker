@@ -400,6 +400,7 @@ function resetData() {
       for (const [key, seconds] of list) {
         const card = document.createElement('div');
         card.className = 'channel-card clickable';
+        card.dataset.channel = key.toLowerCase();
     
         let overlayHTML = '';
     
@@ -450,7 +451,8 @@ function resetData() {
       }
     }      
 
-    if (!showingAll && nonFavItems.length > 6) {
+    const isSearching = document.getElementById('searchInput')?.value.trim().length > 0;
+    if (!showingAll && !isSearching && nonFavItems.length > 6) {
       const moreBtn = document.createElement('button');
       moreBtn.className = 'reset-button';
       moreBtn.textContent = 'Voir plus...';
@@ -460,6 +462,30 @@ function resetData() {
       });
       container.appendChild(moreBtn);
     }
+
+    const searchInput = document.getElementById('searchInput');
+    searchInput.removeEventListener('input', handleSearch);
+    searchInput.addEventListener('input', handleSearch);
+    
+    function handleSearch(e) {
+      const searchTerm = e.target.value.toLowerCase();
+
+      if (searchTerm.length === 0 && showingAll) {
+        displayStreamers(mode);
+      }
+    
+      if (!showingAll && searchTerm.length >= 1) {
+        showingAll = true;
+        displayStreamers(mode);
+        return;
+      }
+    
+      const allCards = document.querySelectorAll('.channel-card');
+      allCards.forEach(card => {
+        const channel = card.dataset.channel?.toLowerCase();
+        card.style.display = channel.includes(searchTerm) ? 'flex' : 'none';
+      });
+    }       
   }
 
   function toggleFavorite(channelName) {

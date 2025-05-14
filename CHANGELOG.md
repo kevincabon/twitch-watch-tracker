@@ -2,6 +2,18 @@
 
 Toutes les modifications importantes de Twitch Watch Tracker seront listées ici.
 
+## [v0.4.7-beta] - 2025-05-14
+
+### Ajouté
+- 🆕 Ajout d’une barre de recherche permettant de filtrer dynamiquement les chaînes dans la popup
+- Fonctionne sur tous les modes d'affichage (total, 7 jours, semaine, mois, catégorie)
+- Supporte la recherche partielle (saisie en direct)
+
+### Technique
+- Ajout d’un attribut `data-channel` aux cartes pour faciliter le filtrage
+
+---
+
 ## [v0.4.6-beta] - 2025-05-14
 
 ### Ajouté
