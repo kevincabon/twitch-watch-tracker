@@ -290,8 +290,41 @@ function resetData() {
     chrome.storage.local.set({ currentWatching });
     
     displayStreamers('total');
+    renderNowWatchingSection(currentWatching);
   });
 
+  function renderNowWatchingSection(currentWatching) {
+    const activeNowContainer = document.getElementById('nowWatching');
+    if (!activeNowContainer) return;
+  
+    activeNowContainer.innerHTML = '';
+  
+    const now = Date.now();
+    const threshold = 5 * 60 * 1000;
+  
+    const activeChannels = Object.entries(currentWatching)
+      .filter(([_, info]) => info.lastUpdate && now - info.lastUpdate <= threshold);
+  
+    if (activeChannels.length === 0) return;
+  
+    const title = document.createElement('div');
+    title.className = 'section-title';
+    title.textContent = '📺 En cours de lecture';
+    activeNowContainer.appendChild(title);
+  
+    for (const [channel, info] of activeChannels) {
+      const statusIcon = info.isPaused ? '⏸️' : info.isMuted ? '🔇' : '▶️';
+      const p = document.createElement('p');
+      p.className = 'channel-now';
+      p.innerHTML = `${statusIcon} <strong>${channel}</strong>`;
+      p.addEventListener('click', () => {
+        showChannelDetails(channel, sessionsData);
+      });
+      activeNowContainer.appendChild(p);
+    }
+    const hr = document.createElement('hr');
+    activeNowContainer.appendChild(hr)
+  }  
 
   filterSelect.addEventListener('change', () => {
     displayStreamers(filterSelect.value);
