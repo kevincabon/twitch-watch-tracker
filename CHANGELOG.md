@@ -2,6 +2,73 @@
 
 Toutes les modifications importantes de Twitch Watch Tracker seront listées ici.
 
+## [v0.5.4] - 2025-12-30
+
+### 🐛 Corrigé
+- **Bug critique du watch time total** : Correction d'une race condition entre `saveWatchTime()` et `saveSession()` qui empêchait l'accumulation du temps total après quelques secondes
+  - Ajout d'une double vérification dans `saveSession()` pour préserver le total mis à jour par `saveWatchTime()`
+  - Utilisation de `Math.max()` pour éviter d'écraser les mises à jour récentes
+  - Délai de 500ms pour éviter les conflits entre les deux fonctions
+  - Le watch time total s'accumule maintenant correctement pendant toute la durée de visionnage
+
+### ✨ Ajouté
+- 💾 **Système de backup automatique** :
+  - Sauvegarde périodique automatique via `chrome.alarms` (configurable dans les options)
+  - Deux modes de sauvegarde : stockage local ou téléchargement de fichier JSON
+  - Nettoyage automatique : conservation des 10 derniers backups
+  - Métadonnées incluses dans chaque backup : date, version, timestamp
+  - Interface de gestion complète dans les options :
+    - Liste des backups disponibles
+    - Restauration d'un backup
+    - Suppression de backups
+    - Téléchargement manuel d'un backup
+    - Création manuelle d'un backup
+    - Affichage de la prochaine sauvegarde automatique
+  - Fallback automatique vers stockage local en cas d'erreur de téléchargement
+  - Permissions ajoutées : `alarms` et `downloads` dans le manifest
+
+### 🔧 Amélioré
+- **Robustesse** : Meilleure gestion des race conditions dans les opérations de stockage
+- **Performance** : Optimisation des appels asynchrones pour éviter les conflits
+
+---
+
+## [v0.5.3-beta] - 2025-12-29
+
+### ✨ Ajouté
+- 🕐 **Tracking des sessions individuelles** :
+  - Enregistrement de l'heure de début de chaque session
+  - Durée précise de chaque session
+  - Catégories visionnées par session
+- 📊 **Section "Horaires de visionnage"** dans les détails des chaînes :
+  - Graphique en barres montrant la distribution des sessions par heure (0h-23h)
+  - Liste des 10 dernières sessions avec date, heure de début et durée
+  - Statistiques : heure préférée et total de sessions
+- 🗑️ **Suppression de sessions individuelles** :
+  - Bouton de suppression (🗑️) à côté de chaque session
+  - Confirmation avant suppression
+  - Mise à jour automatique des statistiques après suppression
+
+### 🔧 Amélioré
+- ⏱️ **Filtrage intelligent** : seules les sessions d'au moins 1 minute sont comptabilisées
+- 🔄 **Mise à jour automatique** : les sessions existantes sont mises à jour si la durée augmente (au lieu de créer des doublons)
+- 💾 **Sauvegarde automatique** :
+  - Sauvegarde périodique toutes les 2 minutes si la session dure >= 1 minute
+  - Sauvegarde à la fermeture de l'onglet ou changement d'onglet
+- ⏸️ **Gestion des pauses/muets** : le temps ne s'accumule pas pendant les pauses ou quand le stream est muet, mais la session continue (cohérent avec le watch time total)
+
+### 🐛 Corrigé
+- 🔒 **Robustesse améliorée** : gestion des erreurs "Extension context invalidated"
+- 🛡️ **Protection contre les valeurs null** : vérifications supplémentaires pour éviter les erreurs lors des changements de page
+- 🧹 **Nettoyage** : suppression de tous les logs de debug
+
+### Technique
+- Structure de données étendue : `sessionList` dans chaque entrée de chaîne pour stocker les sessions individuelles
+- Compatibilité ascendante : les anciennes données continuent de fonctionner
+- Optimisation : évite les sauvegardes multiples de la même session
+
+---
+
 ## [v0.5.2-beta] - 2025-05-14
 
 ### Ajouté

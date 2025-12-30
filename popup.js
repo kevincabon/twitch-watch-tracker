@@ -600,7 +600,278 @@ function getDatesOfWeek(weekKey) {
         document.getElementById('backButton').click();
       });
     });
+  }
+
+  function createWatchingHoursSection(channel, sessions) {
+    const lowerChannel = channel.toLowerCase();
+    const startTimes = getSessionStartTimes(sessions, lowerChannel);
+    const hoursDistribution = getWatchingHoursDistribution(sessions, lowerChannel);
+
+    // Si pas de données d'horaires, ne rien afficher
+    if (startTimes.length === 0) {
+      return null;
+    }
+
+    const container = document.createElement('div');
+    container.className = 'detail-block';
+
+    const sectionTitle = document.createElement('div');
+    sectionTitle.className = 'section-title';
+    sectionTitle.innerHTML = '🕐 Horaires de visionnage';
+    container.appendChild(sectionTitle);
+
+    // Graphique de distribution par heure
+    const chartContainer = document.createElement('div');
+    chartContainer.style.marginTop = '12px';
+    chartContainer.style.marginBottom = '16px';
+    
+    const canvas = document.createElement('canvas');
+    canvas.id = `hoursChart-${lowerChannel}`;
+    canvas.style.maxHeight = '200px';
+    chartContainer.appendChild(canvas);
+    container.appendChild(chartContainer);
+
+    // Créer le graphique Chart.js
+    setTimeout(() => {
+      const ctx = canvas.getContext('2d');
+      const hours = Array.from({ length: 24 }, (_, i) => i);
+      const labels = hours.map(h => `${h}h`);
+      const data = hours.map(h => hoursDistribution[h] || 0);
+
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Nombre de sessions',
+            data: data,
+            backgroundColor: '#9146ff',
+            borderColor: '#7c3aed',
+            borderWidth: 1,
+            barPercentage: 0.8,
+            categoryPercentage: 0.9
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const count = context.parsed.y;
+                  return count === 0 ? 'Aucune session' : `${count} session${count > 1 ? 's' : ''}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1,
+                precision: 0
+              }
+            },
+            x: {
+              ticks: {
+                maxRotation: 0,
+                minRotation: 0
+              }
+            }
+          }
+        }
+      });
+    }, 100);
+
+    // Liste des dernières sessions
+    const recentSessions = startTimes.slice(-10).reverse(); // 10 dernières sessions
+    if (recentSessions.length > 0) {
+      const sessionsList = document.createElement('div');
+      sessionsList.style.marginTop = '12px';
+      sessionsList.style.fontSize = '13px';
+      sessionsList.style.color = '#d6d6e1';
+
+      const sessionsTitle = document.createElement('div');
+      sessionsTitle.style.fontWeight = '600';
+      sessionsTitle.style.color = '#bdbdff';
+      sessionsTitle.style.marginBottom = '8px';
+      sessionsTitle.textContent = 'Dernières sessions :';
+      sessionsList.appendChild(sessionsTitle);
+
+      for (const session of recentSessions) {
+        const sessionItem = document.createElement('div');
+        sessionItem.style.padding = '4px 0';
+        sessionItem.style.display = 'flex';
+        sessionItem.style.justifyContent = 'space-between';
+        sessionItem.style.alignItems = 'center';
+        sessionItem.style.gap = '8px';
+        
+        const dateStr = new Date(session.date).toLocaleDateString('fr-FR', { 
+          day: '2-digit', 
+          month: '2-digit' 
+        });
+        
+        const durationText = session.duration ? formatTime(session.duration) : '?';
+        
+        const leftPart = document.createElement('span');
+        leftPart.innerHTML = `${dateStr} à <span style="color: #9146ff; font-weight: 500;">${session.time}</span>`;
+        
+        const rightPart = document.createElement('div');
+        rightPart.style.display = 'flex';
+        rightPart.style.alignItems = 'center';
+        rightPart.style.gap = '8px';
+        
+        const durationSpan = document.createElement('span');
+        durationSpan.style.color = '#38bdf8';
+        durationSpan.style.fontWeight = '500';
+        durationSpan.textContent = durationText;
+        
+        const deleteButton = document.createElement('button');
+        deleteButton.innerHTML = '🗑️';
+        deleteButton.style.background = 'none';
+        deleteButton.style.border = 'none';
+        deleteButton.style.cursor = 'pointer';
+        deleteButton.style.fontSize = '14px';
+        deleteButton.style.opacity = '0.6';
+        deleteButton.style.padding = '2px 4px';
+        deleteButton.style.borderRadius = '4px';
+        deleteButton.style.transition = 'opacity 0.2s';
+        deleteButton.title = 'Supprimer cette session';
+        
+        deleteButton.addEventListener('mouseenter', () => {
+          deleteButton.style.opacity = '1';
+          deleteButton.style.background = '#ff4c4c22';
+        });
+        deleteButton.addEventListener('mouseleave', () => {
+          deleteButton.style.opacity = '0.6';
+          deleteButton.style.background = 'none';
+        });
+        
+        deleteButton.addEventListener('click', () => {
+          if (confirm(`Supprimer la session du ${dateStr} à ${session.time} (${durationText}) ?`)) {
+            deleteSession(channel, session.iso, session.date);
+          }
+        });
+        
+        rightPart.appendChild(durationSpan);
+        rightPart.appendChild(deleteButton);
+        
+        sessionItem.appendChild(leftPart);
+        sessionItem.appendChild(rightPart);
+        sessionsList.appendChild(sessionItem);
+      }
+
+      container.appendChild(sessionsList);
+    }
+
+    // Statistiques résumées
+    const statsDiv = document.createElement('div');
+    statsDiv.style.marginTop = '12px';
+    statsDiv.style.paddingTop = '12px';
+    statsDiv.style.borderTop = '1px solid #3a3a40';
+    statsDiv.style.fontSize = '13px';
+    statsDiv.style.color = '#d6d6e1';
+
+    // Trouver l'heure la plus fréquente
+    let maxHour = 0;
+    let maxCount = 0;
+    for (let h = 0; h < 24; h++) {
+      if (hoursDistribution[h] > maxCount) {
+        maxCount = hoursDistribution[h];
+        maxHour = h;
+      }
+    }
+
+    if (maxCount > 0) {
+      statsDiv.innerHTML = `
+        <div style="margin-bottom: 4px;">
+          <strong style="color: #fff;">Heure préférée :</strong> 
+          <span style="color: #9146ff;">${maxHour}h</span> 
+          <span style="color: #999;">(${maxCount} session${maxCount > 1 ? 's' : ''})</span>
+        </div>
+        <div>
+          <strong style="color: #fff;">Total de sessions :</strong> 
+          <span style="color: #9146ff;">${startTimes.length}</span>
+        </div>
+      `;
+      container.appendChild(statsDiv);
+    }
+
+    return container;
   }  
+
+  function deleteSession(channelName, sessionStartTimeISO, sessionDate) {
+    chrome.storage.local.get(["sessions"], (result) => {
+      if (chrome.runtime.lastError) {
+        console.error("Error getting sessions:", chrome.runtime.lastError);
+        alert("Erreur lors de la récupération des sessions");
+        return;
+      }
+
+      const sessions = result.sessions || {};
+      const lowerChannel = channelName.toLowerCase();
+      let sessionDeleted = false;
+      const targetTime = new Date(sessionStartTimeISO).getTime();
+
+      // Parcourir toutes les dates pour trouver la session
+      for (const [date, channels] of Object.entries(sessions)) {
+        const channelData = channels[lowerChannel];
+        if (channelData && channelData.sessionList && Array.isArray(channelData.sessionList)) {
+          // Trouver la session à supprimer d'abord pour récupérer sa durée
+          const sessionToDelete = channelData.sessionList.find(session => {
+            if (!session || !session.startTime) return false;
+            const sessionTime = new Date(session.startTime).getTime();
+            return Math.abs(sessionTime - targetTime) < 5000; // Tolérance de 5 secondes
+          });
+
+          if (sessionToDelete) {
+            // Supprimer la session de la liste
+            channelData.sessionList = channelData.sessionList.filter(session => {
+              if (!session || !session.startTime) return true;
+              const sessionTime = new Date(session.startTime).getTime();
+              return Math.abs(sessionTime - targetTime) >= 5000; // Garder si différence >= 5 secondes
+            });
+
+            // Recalculer le total depuis sessionList
+            channelData.total = channelData.sessionList.reduce((sum, s) => sum + (s.duration || 0), 0);
+            
+            // Recalculer aussi les catégories
+            channelData.categories = {};
+            for (const session of channelData.sessionList) {
+              if (session.categories) {
+                for (const [cat, duration] of Object.entries(session.categories)) {
+                  channelData.categories[cat] = (channelData.categories[cat] || 0) + duration;
+                }
+              }
+            }
+            
+            sessionDeleted = true;
+            break; // Session trouvée et supprimée, on peut arrêter
+          }
+        }
+      }
+
+      if (sessionDeleted) {
+        chrome.storage.local.set({ sessions }, () => {
+          if (chrome.runtime.lastError) {
+            console.error("Error saving sessions:", chrome.runtime.lastError);
+            alert("Erreur lors de la suppression de la session");
+          } else {
+            // Recharger les détails de la chaîne pour mettre à jour l'affichage
+            chrome.storage.local.get(["sessions"], (result) => {
+              if (!chrome.runtime.lastError && result.sessions) {
+                showChannelDetails(channelName, result.sessions);
+              }
+            });
+          }
+        });
+      } else {
+        alert("Session non trouvée");
+      }
+    });
+  }
 
   function showChannelDetails(channel, sessions, liveInfo = null) {
     window.scrollTo(0, 0);
@@ -798,6 +1069,12 @@ function getDatesOfWeek(weekKey) {
     const sortedDays = Object.entries(byDay).sort((a, b) => b[0].localeCompare(a[0]));
     const daySection = createExpandableList("📅 Par jour :", sortedDays, (date, sec) => `${date} : ${formatTime(sec)}`);
     detailsContainer.appendChild(daySection);
+
+    // Section horaires de visionnage
+    const hoursSection = createWatchingHoursSection(channel, sessions);
+    if (hoursSection) {
+      detailsContainer.appendChild(hoursSection);
+    }
 
     isTwitchApiAvailable((hasApi) => {
       if (!hasApi) return;

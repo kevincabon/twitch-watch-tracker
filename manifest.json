@@ -1,9 +1,9 @@
 {
     "manifest_version": 3,
     "name": "Twitch Watch Tracker",
-    "version": "0.5.2",
+    "version": "0.5.4",
     "description": "Track your Twitch watch time by streamer and content type!",
-    "permissions": ["storage", "tabs"],
+    "permissions": ["storage", "tabs", "alarms", "downloads"],
     "host_permissions": ["https://www.twitch.tv/*"],
     "content_scripts": [
       {
@@ -24,5 +24,8 @@
         "32": "icons/icon32.png",
         "48": "icons/icon48.png"
       }
+    },
+    "background": {
+      "service_worker": "background.js"
     }
   }  

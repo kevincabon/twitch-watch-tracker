@@ -107,23 +107,23 @@ function formatDateKey(date) {
     const byDay = {};
     const byWeek = {};
     const byMonth = {};
-  
+
     for (const [dateStr, channels] of Object.entries(sessions)) {
       if (channels[channel]) {
         const date = new Date(dateStr);
         const year = date.getFullYear();
         const week = getISOWeek(date);
         const month = `${year}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-  
+
         total += channels[channel];
         byDay[dateStr] = channels[channel];
         byWeek[`${year}-W${week}`] = (byWeek[`${year}-W${week}`] || 0) + channels[channel];
         byMonth[month] = (byMonth[month] || 0) + channels[channel];
       }
     }
-  
+
     const averagePerDay = total / Object.keys(byDay).length;
-  
+
     return {
       total,
       byDay,
@@ -131,4 +131,96 @@ function formatDateKey(date) {
       byMonth,
       averagePerDay: Math.round(averagePerDay)
     };
-  }  
+  }
+
+  /**
+   * Récupère toutes les sessions pour une chaîne donnée
+   * @param {Object} sessions - Les données de sessions
+   * @param {string} channel - Le nom de la chaîne (en minuscules)
+   * @returns {Array} Tableau d'objets { date: string, time: string, datetime: Date, duration: number }
+   */
+  function getSessionStartTimes(sessions, channel) {
+    const sessionList = [];
+    const lowerChannel = channel.toLowerCase();
+
+    for (const [dateStr, channels] of Object.entries(sessions)) {
+      const channelData = channels[lowerChannel];
+      // Utiliser sessionList si disponible, sinon fallback sur sessionStartTimes (anciennes données)
+      if (channelData) {
+        if (channelData.sessionList && Array.isArray(channelData.sessionList)) {
+          // Nouvelle structure : sessionList avec durée
+          for (const session of channelData.sessionList) {
+            if (session.duration >= 60) { // Seulement les sessions >= 1 minute
+              const datetime = new Date(session.startTime);
+              sessionList.push({
+                date: dateStr,
+                time: datetime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+                datetime: datetime,
+                iso: session.startTime,
+                duration: session.duration
+              });
+            }
+          }
+        } else if (channelData.sessionStartTimes && Array.isArray(channelData.sessionStartTimes) && (channelData.total || 0) >= 60) {
+          // Ancienne structure : sessionStartTimes (compatibilité)
+          for (const timeISO of channelData.sessionStartTimes) {
+            const datetime = new Date(timeISO);
+            sessionList.push({
+              date: dateStr,
+              time: datetime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+              datetime: datetime,
+              iso: timeISO,
+              duration: null // Durée inconnue pour les anciennes données
+            });
+          }
+        }
+      }
+    }
+
+    // Trier par date/heure (plus ancien en premier)
+    return sessionList.sort((a, b) => a.datetime - b.datetime);
+  }
+
+  /**
+   * Analyse les heures de début de session pour déterminer les horaires de visionnage préférés
+   * @param {Object} sessions - Les données de sessions
+   * @param {string} channel - Le nom de la chaîne (optionnel, si null analyse toutes les chaînes)
+   * @returns {Object} Statistiques par heure (0-23)
+   */
+  function getWatchingHoursDistribution(sessions, channel = null) {
+    const hoursCount = {};
+    const lowerChannel = channel ? channel.toLowerCase() : null;
+
+    // Initialiser toutes les heures à 0
+    for (let h = 0; h < 24; h++) {
+      hoursCount[h] = 0;
+    }
+
+    for (const [dateStr, channels] of Object.entries(sessions)) {
+      for (const [chan, channelData] of Object.entries(channels)) {
+        if (lowerChannel && chan !== lowerChannel) continue;
+        
+        if (channelData) {
+          if (channelData.sessionList && Array.isArray(channelData.sessionList)) {
+            // Nouvelle structure : sessionList
+            for (const session of channelData.sessionList) {
+              if (session.duration >= 60) { // Seulement les sessions >= 1 minute
+                const datetime = new Date(session.startTime);
+                const hour = datetime.getHours();
+                hoursCount[hour] = (hoursCount[hour] || 0) + 1;
+              }
+            }
+          } else if (channelData.sessionStartTimes && Array.isArray(channelData.sessionStartTimes) && (channelData.total || 0) >= 60) {
+            // Ancienne structure : sessionStartTimes (compatibilité)
+            for (const timeISO of channelData.sessionStartTimes) {
+              const datetime = new Date(timeISO);
+              const hour = datetime.getHours();
+              hoursCount[hour] = (hoursCount[hour] || 0) + 1;
+            }
+          }
+        }
+      }
+    }
+
+    return hoursCount;
+  }
