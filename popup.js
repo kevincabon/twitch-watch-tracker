@@ -224,8 +224,18 @@ function formatShortDay(dateStr) {
 
 function getDatesOfWeek(weekKey) {
   const [year, week] = weekKey.split('-W').map(Number);
-  const targetThursday = new Date(Date.UTC(year, 0, 1 + (week - 1) * 7 + 1));
+  // Calculer le jeudi de la semaine ISO en UTC pour la cohérence
+  const targetThursdayUTC = new Date(Date.UTC(year, 0, 1 + (week - 1) * 7 + 1));
   
+  // Créer une date locale à partir des composants UTC du jeudi
+  // pour éviter les décalages de fuseau horaire dans le calcul
+  const targetThursday = new Date(
+    targetThursdayUTC.getUTCFullYear(),
+    targetThursdayUTC.getUTCMonth(),
+    targetThursdayUTC.getUTCDate()
+  );
+  
+  // Calculer le lundi (3 jours avant le jeudi)
   const targetMonday = new Date(targetThursday);
   targetMonday.setDate(targetThursday.getDate() - 3);
   
@@ -233,7 +243,8 @@ function getDatesOfWeek(weekKey) {
   for (let i = 0; i < 7; i++) {
     const date = new Date(targetMonday);
     date.setDate(targetMonday.getDate() + i);
-    dates.push(date.toISOString().split('T')[0]);
+    // Utiliser le fuseau horaire local pour la clé de date
+    dates.push(formatDateKeyLocal(date));
   }
   
   return dates;
@@ -1289,13 +1300,21 @@ function getStatsGroupedByMonth(sessions) {
   return monthly;
 }
 
+function formatDateKeyLocal(date) {
+  // Formate une date au format YYYY-MM-DD en utilisant le fuseau horaire local
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function getLast7DaysDates() {
   const dates = [];
   const today = new Date();
   for (let i = 0; i < 7; i++) {
     const date = new Date(today);
     date.setDate(today.getDate() - i);
-    dates.push(date.toISOString().split('T')[0]);
+    dates.push(formatDateKeyLocal(date));
   }
   return dates;
 }
